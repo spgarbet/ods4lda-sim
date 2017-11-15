@@ -3,6 +3,9 @@
 ## Perform multiple simulations from a set of known parameters of ods4lda
 ## Compares random, ACML, WL, and Imputation for int, slp and bivar
 ##  
+.libPaths("~/R/rlib-3.4.0")
+
+
 library(lme4)
 library(ODS4LDA)
 library(reshape)
@@ -37,7 +40,7 @@ DirectImputation <- function(new.dat, n.imp)
     new.dat.wide <- reshape(new.dat, idvar=c("id", "conf","grp","ymean","ytmean"), timevar=c("time"), direction="wide")
     new.dat.wide$grp[new.dat.wide$grp==9999] <- NA
     #imp          <- aregImpute(~grp+conf+y.0+y.1+y.2+y.3+y.4, data=new.dat.wide, n.impute=n.imp, type="regression")
-    imp          <- aregImpute(~grp+conf+ymean+ytmean+y.0+y.1+y.2+y.3+y.4, data=new.dat.wide, n.impute=n.imp, nk=0, type="regression")
+    imp          <- aregImpute(~grp+conf+ymean+ytmean+y.0+y.1+y.2+y.3+y.4, data=new.dat.wide, n.impute=n.imp, nk=0, type="regression", pr=FALSE)
 
     Ests.Imp <- Covs.Imp <- list()
     cat("... ... Imputation # ")
@@ -411,3 +414,4 @@ args <- commandArgs(trailingOnly=TRUE)
 x    <- as.numeric(args[1])
 set.seed(x)
 sapply(1:4, function(y) simulation(x,y))
+
