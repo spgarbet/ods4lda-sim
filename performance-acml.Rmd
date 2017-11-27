@@ -1,0 +1,338 @@
+---
+title: "Performace of ACML"
+author: "Shawn Garbett"
+date: "November 15, 2017"
+output: html_document
+---
+
+<style type="text/css">
+.failure {background-color: pink;}
+
+body, td {
+   font-size: 12px;
+}
+code.r{
+  font-size: 12px;
+}
+pre {
+  font-size: 10px
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tangram)
+library(Hmisc)
+```
+
+```{r process_data, include=FALSE, cache=TRUE}
+# Known true parameters
+N                <- 1200
+ni               <- 5
+prev.grp         <- 0.4
+conf.param       <- c(-0.5, 1)
+n.imp            <- 200
+
+scenarios <- rbind(c(75, -1, -1, -0, -.3, log(9),log(1),0,log(3.5)),
+                   c(75, -1, -1, -1, -.3, log(9),log(1),0,log(3.5)),
+                   c(75, -1, -1, -5, -.3, log(9),log(1),0,log(3.5)),
+                   c(75, -1, -1, -1, -.3, log(4),log(1),0,log(3.5)))
+
+# Helper function for repeated operation over files.
+doit <- function(g, target="output", verbose=FALSE)
+{
+  files <- paste0(target, "/", dir(target))
+  
+  do.call(rbind, lapply(files, function(f) {
+    if(verbose) cat("Loading ", f, "\n")
+    load(f)
+    # This is function to bind the current environment fits into a single list for apply operations
+    fits <- list( Fit.ran,      Fit.int,      Fit.slp,      Fit.biv,
+                                Fit.int.wl,   Fit.slp.wl,   Fit.biv.wl,
+                  Fit.ran.mi,   Fit.int.mi,   Fit.slp.mi,   Fit.biv.mi,
+                  Fit.ran.mi2,  Fit.int.mi2,  Fit.slp.mi2,  Fit.biv.mi2)
+    
+    x <- strsplit(f, "-|\\.")[[1]]
+    g(fits, as.numeric(x[2]), as.numeric(x[3])) # Run and Scenario
+  }))
+}
+
+
+# Specific statistics about result desired
+sqrt.diag <- function(x) sqrt(diag(x))
+
+covered <- function(fit, scenario)
+{
+  rng <- 1:5
+  ses <- sqrt.diag(fit$covariance)[rng]
+  lci <- fit$coefficients[rng] - qnorm(.975)*ses
+  uci <- fit$coefficients[rng] + qnorm(.975)*ses
+  truth <- scenarios[scenario,][rng]
+  
+  (truth >= lci) & (truth <= uci)
+}
+diff     <- function(fit, scenario) fit$coefficients[1:5] - scenarios[scenario,][1:5]
+
+coverage <- function(fits, scenario) sapply(fits, function(f) covered(f, scenario))
+diffs    <- function(fits, scenario) sapply(fits, function(f) diff(f, scenario))
+ests     <- function(fits) sapply(fits, function(f) f$coefficients[1:5])
+vars     <- function(fits) sapply(fits, function(f) diag(f$covariance)[1:5])
+
+# Given a list of fits from a run, process into a data frame by factor
+summarize <- function(fits, job, scenario)
+{
+  cover  <- coverage(fits, scenario)
+  diff   <- diffs(fits, scenario)
+  est    <- ests(fits)
+  var    <- vars(fits)
+  result <- data.frame(
+    job      = rep(job, 15),
+    scenario = rep(scenario, 15),
+    sampling = c("random", "intercept", "slope", "bivariate",
+                           "intercept", "slope", "bivariate",
+                "random", "intercept", "slope", "bivariate",
+                "random", "intercept", "slope", "bivariate"),
+    method   = c(rep("acml", 4), rep("wl", 3), rep("mi", 4), rep("mi2",4)))
+  
+  result <- cbind(result, t(cover), t(diff), t(est), t(var))
+  colnames(result) <- c("job", "scenario", "sampling", "method", 
+    paste(rep(c("cover", "diff", "est", "var"), each=5), c("int", "time", "grp", "conf", "tg"), sep="."))
+  
+  result
+}
+
+results <- doit(summarize, verbose=TRUE)
+
+results <- cleanup.import(results,
+  labels= c("Job", "Scenario", "Sampling", "Method", 
+            rep(c("Intercept", "Group", "Time", "Confounder",
+                  "Interaction"), times=4
+               )
+           )
+)
+```
+
+## Purpose
+
+In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
+
+The code being tested is available in the git commit hash `9c67df2f0b62ab32b1fd76f3d75e81bda1cca834`.
+
+### Method
+1200 individuals were simulated using 4 mixed effect models,
+
+$$y_{ij} = 75 - 1 t_{ij} - 1 g_i - R_k c_i - 0.3 t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
+$$\begin{bmatrix} b_{0i} \\ b_{1i} \\ \end{bmatrix} \sim \mathcal{N}\left(
+  \begin{bmatrix} 0\\0\\ \end{bmatrix},
+  \begin{bmatrix} S_k & 0 \\ 0 & 1 \\ \end{bmatrix} \right)$$
+
+$$ \epsilon_{ij} \sim \mathcal{N}(0, 12.25)$$
+where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the presence or absence of a confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.4 probability.
+
+The 4, $k=[1,4]$, different models are defined by the parameters:
+
+$$ R_k = {0, -1, -5, -1} $$
+
+$$ S_k = {81, 81, 81, 16}$$
+
+This was used to create 5 observations at equally spaced time points for each individual.
+
+During each of the 2000 runs approximately 250 individuals were sampled using a Bernoulli strategy to target 200 in the lower and upper 10% of targetted stratum (intercept, slope or bivariate) with 50 individuals in the middle 80% of stratum.
+
+From these runs, we examine the 95\% coverage intervals, the observed bias of estimation and compare the variance of the estimates to the average of the variances estimated by the model using both methods on the same subsampled data sets, as well as examine the accuracy and precision.
+
+The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and bivariate crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (200 replicates) and indirect multiple imputation exluding one duplicate method for random sampling (wl).
+
+## Results
+
+### Coverage
+
+```{r, results='asis', echo=FALSE}
+coverage <- function(table,
+                     row,
+                     column,
+                     ...)
+{
+  grid          <- table(as.categorical(row$data), as.categorical(column$data), useNA="no")
+  validcol      <- which(!apply(grid,2,FUN = function(x){all(x == 0)}))
+  validrow      <- which(!apply(grid,1,FUN = function(x){all(x == 0)}))
+  ncol          <- dim(grid)[2]
+  nrow          <- dim(grid)[1]
+
+  denominators  <- matrix(rep(colSums(grid), nrow), ncol=ncol, byrow=TRUE)
+  rowlabels     <- rownames(grid)
+
+  # Compute overall N values for each category
+  # length(datac[datac == cat & !is.na(datac)])
+  subN <- lapply(colnames(grid), FUN=function(cat)
+    cell_n( sum(column$data == cat, na.rm=TRUE), subcol=cat)
+  )
+
+  # Why is this so difficult?
+
+  # More complex name derivation
+  name <- row$name()
+  try({
+        l2 <- attr(row$data, "label")
+        if(!is.null(l2)) {name<-l2}
+  })
+
+  # Select part of grid table, then do all the munging to get it back in form
+  x <- matrix(grid[2,], nrow=1)
+  colnames(x) <- colnames(grid)
+  rownames(x) <- name
+  grid <- x
+  denominators <- matrix(denominators[2,], nrow=1)
+  nrow <- 1
+
+  # Column Headers
+  table <- col_header(table, colnames(grid))
+  table <- col_header(table, subN)
+
+    # Row Headers
+  if(nrow > 1) table <- row_header(table, derive_label(row)) # Deal with single
+  for(nm in rownames(grid)) table <- row_header(table, nm)
+
+  # Now loop the grid into the table as a fraction
+  for(j in 1:ncol)
+  {
+    if(nrow > 1) table <- add_row(table, "")
+    for(i in 1:nrow)
+    {
+      table <-
+        if(denominators[i,j] == 0)
+          add_row(table, "")
+        else
+        {
+          test <- prop.test(grid[i,j], denominators[i,j], p=0.95)
+          
+          cls <- if(test$p.value < 0.001) "failure" else NULL
+          add_row(table, cell(paste0(
+            render_f(test$estimate*100, 1), " (",
+            render_f(test$conf.int[1]*100, 1), ", ",
+            render_f(test$conf.int[2]*100, 1), ")"
+          ), class=cls))
+        }
+    }
+    table <- new_col(table)
+  }
+
+  table
+}
+
+cover_table <- function(sample, subbatch)
+{
+  tbl <- tangram(
+           method ~ cover.int+cover.time+cover.grp+cover.conf+cover.tg,
+           subset(results, sampling==tolower(sample) & scenario == subbatch),
+           transforms=coverage)
+  html5(
+    tbl,
+    id=paste0(sample,"_",subbatch),
+    caption=paste(sample, "Sampling Coverage Scenario", subbatch),
+    fragment=TRUE, inline="nejm.css", footnote="Values in Pink have p < 0.001")
+}
+
+all_cover_table <- function()
+{
+   all <- paste0(sapply(c("Random", "Intercept", "Slope", "Bivariate"), function(m) {
+     paste0(sapply(1:4, function(x) cover_table(m, x)), collapse='<br/>')
+   }), collapse='<br/>')
+   class(all) <- c("html", "character")
+   all
+}
+
+all_cover_table()
+```
+
+```{r, results='asis', echo=FALSE}
+
+cell_func <- function(table, row, column, fun=NULL, ...)
+{
+  colname <- NULL
+  try({colname <- derive_label(column)}, silent=TRUE)
+  if(is.null(colname)) try({colname <- derive_label(column$left)}, silent=TRUE)
+  if(is.null(colname)) colname <- column$string()
+  table <- col_header(table, colname)
+  major <- unique(row$left$data)
+  minor <- unique(row$right$data)
+
+  for(m in major)
+  {
+    first <- m
+    for(n in minor)
+    {
+      table <- row_header(table, first, n, sub=FALSE)
+      first <- ""
+      table <- add_row(table, fun(column, m == row$left$data & n == row$right$data))
+    }
+  }
+  
+  table
+}
+
+est.bias      <- function(column, selector)
+{
+  data  <- column$data[selector]
+  test  <- t.test(data, na.rm=TRUE)
+  cls   <- if(test$p.value < 0.001) "failure" else NULL
+  ci    <- paste0(render_f(test$estimate, 3), 
+                  " (", render_f(test$conf.int[1], 3), ", ",
+                  render_f(test$conf.int[2], 3), ")")
+  cell(ci, class=cls)
+}
+
+bias_table <- function(m)
+{
+  tbl <- tangram(diff.int + diff.time + diff.grp + diff.conf + diff.tg ~ scenario*sampling,
+               data=subset(results, method==tolower(m)), transforms = cell_func, fun=est.bias)
+  html5(tbl, id=paste0(m, "_bias"), caption=paste(m, "Estimator Bias"), inline="nejm.css",          footnote="Values in Pink have p < 0.001")
+}
+
+all_bias_table <- function()
+{
+   all <- paste0(sapply(c("ACML", "MI", "MI2", "WL"), function(m) bias_table(m)), collapse='<br/>')
+   class(all) <- c("html", "character")
+   all
+}
+
+all_bias_table()
+
+```
+<br/>
+
+```{r, , results='asis', echo=FALSE}
+var.bias <- function(column, selector)
+{
+  truth    <- var(column$left$data[selector])   # variance of estimates
+  estimate <- mean(column$right$data[selector]) # mean of estimated variances
+
+  percent  <- 100*(estimate-truth)/truth
+  
+  cls   <- if(abs(percent) > 10) "failure" else NULL
+  cell(render_f(percent, 1), class=cls)
+}
+
+var.bias_table <- function(m)
+{
+  tbl <- tangram(est.int * var.int    +
+                   est.time* var.time + 
+                   est.grp * var.grp  +
+                   est.conf* var.conf +
+                   est.tg  * var.tg   ~ scenario*sampling,
+                 data=subset(results, method==tolower(m)),
+                 transforms = cell_func, fun=var.bias)
+  html5(tbl, id=paste0(m, "_varbias"), caption=paste(m, "Variance Bias Relative Percent"), inline="nejm.css",          footnote="Values in Pink have exceed 10%")
+}
+
+all_var.bias_table <- function()
+{
+   all <- paste0(sapply(c("ACML", "MI", "MI2", "WL"), function(m) var.bias_table(m)), collapse='<br/>')
+   class(all) <- c("html", "character")
+   all
+}
+
+all_var.bias_table()
+```

@@ -212,20 +212,14 @@ prev.grp         <- 0.4
 conf.param       <- c(-0.5, 1)
 n.imp            <- 200
 
-tmp1 <-      rbind(c(75, -1, -1, -0, -.3, log(9),log(1),0,log(3.5)),
+tmp.inits <- rbind(c(75, -1, -1, -0, -.3, log(9),log(1),0,log(3.5)),
                    c(75, -1, -1, -1, -.3, log(9),log(1),0,log(3.5)),
                    c(75, -1, -1, -5, -.3, log(9),log(1),0,log(3.5)),
                    c(75, -1, -1, -1, -.3, log(4),log(1),0,log(3.5)))
-tmp2 <- rbind(c(100,50,100),c(100,50,100), c(100,50,100),c(100,50,100))
-tmp3 <- rbind(c(50,200),c(50,200),c(50,200),c(50,200))
+tmpNsStratUniv <- rbind(c(100,50,100),c(100,50,100), c(100,50,100),c(100,50,100))
+tmpNsStratBiv  <- rbind(c(50,200),c(50,200),c(50,200),c(50,200))
 
-tmp.inits <- tmpNsStratUniv <- tmpNsStratBiv <- NULL
-for (i in 1:1){
-    tmp.inits <- rbind(tmp.inits, tmp1)
-    tmpNsStratUniv <- rbind(tmpNsStratUniv, tmp2)
-    tmpNsStratBiv  <- rbind(tmpNsStratBiv, tmp3)
-}
-inits.sim <- tmp.inits
+inits.sim            <- tmp.inits
 NsPerStratumUniv.sim <- tmpNsStratUniv
 NsPerStratumBiv.sim  <- tmpNsStratBiv
 
@@ -387,7 +381,7 @@ simulation <- function(run, count)
   progress("... biv.mi")
   Fit.biv.mi <- DirectImputation(new.dat=datBivMiss, n.imp=n.imp)
 
-  progress(paste0("Run ", count, "complete. Saving data."))
+  progress(paste0("Run ", count, " complete. Saving data."))
   save( Fit.ran,      Fit.int,      Fit.slp,      Fit.biv,
                       Fit.int.wl,   Fit.slp.wl,   Fit.biv.wl,
         Fit.ran.mi,   Fit.int.mi,   Fit.slp.mi,   Fit.biv.mi,
