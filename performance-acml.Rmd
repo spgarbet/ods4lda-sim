@@ -264,7 +264,7 @@ cell_func <- function(table, row, column, fun=NULL, ...)
     first <- m
     for(n in minor)
     {
-      table <- row_header(table, first, n, sub=FALSE)
+      table <- row_header(table, list(first, n), sub=FALSE)
       first <- ""
       table <- add_row(table, fun(column, m == row$left$data & n == row$right$data))
     }
