@@ -31,8 +31,6 @@ gen.std.mixnorm <- function(n.obs, mn0, mn1, sd0, sd1, p1, group){
 	out     <- (val-mean(val.tmp))/(sqrt(var(val.tmp)))
     out
 }
-
-#' @export
 GenerateX <- function(N, n, prev.grp, c.parm){
     id   <- rep(1:N, each=n)
     time <- rep(c(0:(n-1)), N)
@@ -44,7 +42,6 @@ GenerateX <- function(N, n, prev.grp, c.parm){
     out
 }
 
-#' @export
 GenerateY <- function(X, Z, id, beta, sig.b0 = 0.25, sig.b1 = 0.25, rho = 0, sig.e = 0.5, RanefDist, ErrorDist){
     lp <- X %*% beta
     cov.mat  <- matrix(c(sig.b0^2, rho*sig.b0*sig.b1, rho*sig.b0*sig.b1, sig.b1^2),2,2)
@@ -74,7 +71,6 @@ GenerateY <- function(X, Z, id, beta, sig.b0 = 0.25, sig.b1 = 0.25, rho = 0, sig
     return(Y)
 }
 ## generate a missing at random mechanism
-#' @export
 GenerateMAR <- function(Y, X, id, param, cutpoint.drop){
     ## set param[2] to 0 for MCAR
     keep <- rep(1, length(Y))
@@ -87,14 +83,12 @@ GenerateMAR <- function(Y, X, id, param, cutpoint.drop){
 }
 
 ## do subject-specific linear regressions. Important to note that data must contain variables Y and time
-#' @export
 LinRegFn <- function(data){  X  <- cbind(1, data$time)
                              Xt <- t(X)
                              Y  <- data$Y
                              solve(Xt %*% X) %*% Xt %*% Y}
 
 ## calc subject specific intercepts and slopes and output them with the same length as the longitudinal data
-#' @export
 CalcSSIntSlp <- function( Y, time, id){
     data.tmp  <- data.frame(id=id, Y=Y, time=time)
     data.list <- split(data.tmp, id)
@@ -107,12 +101,11 @@ CalcSSIntSlp <- function( Y, time, id){
 ## If you have a problem with this function it is likely due to the search for the central region
 ## under bivariate sampling.  You may have to adjust Del.  I think it is due to the discreteness of
 ## due to insufficient sample size.
-#' @export
 est.cutoffs <- function(Y, time, id, PropInCentralRegion){
     p         <- PropInCentralRegion
     data.tmp  <- data.frame(id=id, Y=Y, time=time)
     data.list <- split(data.tmp, id)
-    print("Running individual regressions")
+    #print("Running individual regressions")
     out      <- matrix(unlist(lapply(data.list, LinRegFn)), byrow=TRUE, ncol=2)
 
     Ints <- quantile(out[,1], c((1-p)/2,(1+p)/2))
@@ -133,7 +126,6 @@ est.cutoffs <- function(Y, time, id, PropInCentralRegion){
     out
 }
 
-#' @export
 identify.stratum <- function(Y, time, id, w.function, cutpoints, Int, Slp){
     ## under bivar sampling cutpoints should be of the form (int.lower, int.upper, slp.lower, slp.upper)
 
@@ -145,7 +137,7 @@ identify.stratum <- function(Y, time, id, w.function, cutpoints, Int, Slp){
     stratum
 }
 
-#' @export
+
 ods.sampling <- function(id.long,          # id in long format
                          stratum.long,     # stratum identifier in long format)
                          SamplingStrategy, # "IndepODS" or "DepODS"
@@ -174,7 +166,6 @@ ods.sampling <- function(id.long,          # id in long format
 }
 
 ## note that we really do not need quants, PopnQuants, and w.function but to make the fitting function work
-#' @export
 random.sampling <- function(id.long, n=225){
     s <- sample(unique(id.long), n)
     Sampled <- as.integer(id.long %in% s)
