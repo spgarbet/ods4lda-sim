@@ -1,7 +1,7 @@
 ---
 title: "Performace of ACML"
 author: "Shawn Garbett"
-date: "November 15, 2017"
+date: "May 22, 2018"
 output: html_document
 ---
 
@@ -27,18 +27,17 @@ library(tangram)
 library(Hmisc)
 ```
 
-```{r process_data, include=FALSE, cache=TRUE}
+```{r functions, include=FALSE, cache=TRUE}
 # Known true parameters
-N                <- 1200
-ni               <- 5
-prev.grp         <- 0.4
+N                <- 1600
+prev.grp         <- 0.25
 conf.param       <- c(-0.5, 1)
-n.imp            <- 200
+n.imp            <- 75
 
-scenarios <- rbind(c(75, -1, -1, -0, -.3, log(9),log(1),0,log(3.5)),
-                   c(75, -1, -1, -1, -.3, log(9),log(1),0,log(3.5)),
-                   c(75, -1, -1, -5, -.3, log(9),log(1),0,log(3.5)),
-                   c(75, -1, -1, -1, -.3, log(4),log(1),0,log(3.5)))
+scenarios <- rbind(c(75, -1, -1, -1, 1, log(9),log(1),0,log(3.5)),
+                   c(75, -1, -1, -5, 1, log(9),log(1),0,log(3.5)),
+                   c(75, -1, -1, -1, 1, log(9),log(1),0,log(3.5)),
+                   c(75, -1, -1, -5, 1, log(9),log(1),0,log(3.5)))
 
 # Helper function for repeated operation over files.
 doit <- function(g, target="output", verbose=FALSE)
@@ -48,6 +47,12 @@ doit <- function(g, target="output", verbose=FALSE)
   do.call(rbind, lapply(files, function(f) {
     if(verbose) cat("Loading ", f, "\n")
     load(f)
+    
+    # Use Rob Cov for covariance for wl
+    Fit.int.wl$covariance <- Fit.int.wl$robcov
+    Fit.slp.wl$covariance <- Fit.slp.wl$robcov
+    Fit.biv.wl$covariance <- Fit.biv.wl$robcov
+    
     # This is function to bind the current environment fits into a single list for apply operations
     fits <- list( Fit.ran,      Fit.int,      Fit.slp,      Fit.biv,
                                 Fit.int.wl,   Fit.slp.wl,   Fit.biv.wl,
@@ -102,7 +107,9 @@ summarize <- function(fits, job, scenario)
   
   result
 }
+```
 
+```{r process_data, include=FALSE, cache=TRUE}
 results <- doit(summarize, verbose=TRUE)
 
 results <- cleanup.import(results,
@@ -118,12 +125,12 @@ results <- cleanup.import(results,
 
 In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
 
-The code being tested is available in the git commit hash `9c67df2f0b62ab32b1fd76f3d75e81bda1cca834`.
+The code being tested is available in the git commit hash `48e27ff1f95c37f83f35ea0e022dc4a71c371061`.
 
 ### Method
-1200 individuals were simulated using 4 mixed effect models,
+1600 individuals were simulated using 4 mixed effect models,
 
-$$y_{ij} = 75 - 1 t_{ij} - 1 g_i - R_k c_i - 0.3 t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
+$$y_{ij} = 75 - 1 t_{ij} - 1 g_i - R_k c_i + t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
 $$\begin{bmatrix} b_{0i} \\ b_{1i} \\ \end{bmatrix} \sim \mathcal{N}\left(
   \begin{bmatrix} 0\\0\\ \end{bmatrix},
   \begin{bmatrix} S_k & 0 \\ 0 & 1 \\ \end{bmatrix} \right)$$
@@ -133,17 +140,17 @@ where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is
 
 The 4, $k=[1,4]$, different models are defined by the parameters:
 
-$$ R_k = {0, -1, -5, -1} $$
+$$ R_k = {-1, -5, -1, -5} $$
 
-$$ S_k = {81, 81, 81, 16}$$
+$$ S_k = {81, 81, 81, 81}$$
 
-This was used to create 5 observations at equally spaced time points for each individual.
+This was used to create between 4 to 6 observations at equally spaced time points for each individual in scenarios 1 and 2, and between 7 and 13 observations for scenarios 3 and 4.
 
-During each of the 2000 runs approximately 250 individuals were sampled using a Bernoulli strategy to target 200 in the lower and upper 10% of targetted stratum (intercept, slope or bivariate) with 50 individuals in the middle 80% of stratum.
+During each of the 2000 runs approximately 400 individuals were sampled using a Bernoulli strategy to target 150 in the lower and upper 10% of targetted stratum (intercept, slope or bivariate) with 100 individuals in the middle 80% of stratum.
 
 From these runs, we examine the 95\% coverage intervals, the observed bias of estimation and compare the variance of the estimates to the average of the variances estimated by the model using both methods on the same subsampled data sets, as well as examine the accuracy and precision.
 
-The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and bivariate crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (200 replicates) and indirect multiple imputation exluding one duplicate method for random sampling (wl).
+The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and bivariate crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (75 replicates) and indirect multiple imputation exluding one duplicate method for random sampling (wl).
 
 ## Results
 
