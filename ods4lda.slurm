@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --mail-user=shawn.garbett@vanderbilt.edu
+#SBATCH --mail-user=shawn.garbett@vumc.org
 #SBATCH --mail-type=ALL
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

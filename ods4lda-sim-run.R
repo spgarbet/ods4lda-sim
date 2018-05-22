@@ -3,6 +3,8 @@
 ## Perform multiple simulations from a set of known parameters of ods4lda
 ## Compares random, ACML, WL, and Imputation for int, slp and bivar
 ##  
+.libPaths(c("~/R/rlib-3.4.0", .libPaths()))  # Append ACCRE local directory
+
 library(lme4)
 library(ODS4LDA)
 library(reshape)
