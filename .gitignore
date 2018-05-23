@@ -1,4 +1,6 @@
-output
+output*
+updated*
+*cache
 status
 .Rproj.user
 *.Rproj

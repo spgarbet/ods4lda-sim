@@ -34,10 +34,10 @@ prev.grp         <- 0.25
 conf.param       <- c(-0.5, 1)
 n.imp            <- 75
 
-scenarios <- rbind(c(75, -1, -1, -1, 1, log(9),log(1),0,log(3.5)),
-                   c(75, -1, -1, -5, 1, log(9),log(1),0,log(3.5)),
-                   c(75, -1, -1, -1, 1, log(9),log(1),0,log(3.5)),
-                   c(75, -1, -1, -5, 1, log(9),log(1),0,log(3.5)))
+scenarios <- rbind(c(75, -1, -.5, -1, -.5, log(9), log(1.25), 0, log(3.5)),
+                   c(75, -1, -.5, -4, -.5, log(9), log(1.25), 0, log(3.5)),
+                   c(75, -1, -.5, -1, -.5, log(9), log(1.25), 0, log(3.5)),
+                   c(75, -1, -.5, -4, -.5, log(9), log(1.25), 0, log(3.5)))
 
 # Helper function for repeated operation over files.
 doit <- function(g, target="output", verbose=FALSE)
@@ -125,22 +125,22 @@ results <- cleanup.import(results,
 
 In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
 
-The code being tested is available in the git commit hash `48e27ff1f95c37f83f35ea0e022dc4a71c371061`.
+The code being tested is available in the git commit hash `42d5898cb42bbdd1928d55691a1c34570a824a24`.
 
 ### Method
 1600 individuals were simulated using 4 mixed effect models,
 
-$$y_{ij} = 75 - 1 t_{ij} - 1 g_i - R_k c_i + t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
+$$y_{ij} = 75 - 1 t_{ij} - \frac{1}{2} g_i - R_k c_i -\frac{1}{2} t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
 $$\begin{bmatrix} b_{0i} \\ b_{1i} \\ \end{bmatrix} \sim \mathcal{N}\left(
   \begin{bmatrix} 0\\0\\ \end{bmatrix},
-  \begin{bmatrix} S_k & 0 \\ 0 & 1 \\ \end{bmatrix} \right)$$
+  \begin{bmatrix} S_k & 0 \\ 0 & 1.5625 \\ \end{bmatrix} \right)$$
 
 $$ \epsilon_{ij} \sim \mathcal{N}(0, 12.25)$$
 where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the presence or absence of a confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.4 probability.
 
 The 4, $k=[1,4]$, different models are defined by the parameters:
 
-$$ R_k = {-1, -5, -1, -5} $$
+$$ R_k = {-1, -4, -1, -4} $$
 
 $$ S_k = {81, 81, 81, 81}$$
 
