@@ -5,10 +5,10 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=09:00:00
+#SBATCH --time=09:30:00
 #SBATCH --mem=16G
 #SBATCH --output=status/job%a.out
-#SBATCH --array=32-2000
+#SBATCH --array=1-500
 #SBATCH --constrain=haswell
 
 module purge
