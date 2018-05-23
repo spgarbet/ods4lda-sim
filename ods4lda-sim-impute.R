@@ -18,25 +18,33 @@ cluster.summary <- function(id, x, fun)
 #####################
 DirectImputation <- function(new.dat, n.imp)
 {
+    new.dat=datSlpMiss
+
     new.dat$grp[is.na(new.dat$grp)] <- 9999
     new.dat.wide <- reshape(new.dat, idvar=c("id", "conf","grp","ymean","ytmean","tmean","t2mean"), timevar=c("time"), direction="wide")
     new.dat.wide.merge <- new.dat.wide[,c("id",grep("y\\.", names(new.dat.wide), value=TRUE))]
     new.dat.wide$grp[new.dat.wide$grp==9999] <- NA
     #imp          <- aregImpute(~grp+conf+y.0+y.1+y.2+y.3+y.4, data=new.dat.wide, n.impute=n.imp, type="regression")
     #imp          <- aregImpute(~grp+conf+ymean+ytmean+y.0+y.1+y.2+y.3+y.4, data=new.dat.wide, n.impute=n.imp, nk=0, type="regression")
-    imp          <- aregImpute(~grp+conf+ymean+ytmean+tmean+t2mean, data=new.dat.wide, n.impute=n.imp, nk=0, type="pmm")
+    #imp          <- aregImpute(~grp+conf+ymean+ytmean+tmean+t2mean, data=new.dat.wide, n.impute=n.imp, nk=0, type="pmm")
+    pred.imp      <- predict(lrm(grp~conf*(ymean+ytmean+tmean+t2mean), data=new.dat.wide), new.dat.wide, type="fitted")
+    
     Ests.Imp <- Covs.Imp <- list()
     for (IMP in 1:n.imp)
     {
+        Completed         <- new.dat.wide
+        imp.grp         <- rbinom(length(pred.imp),1, pred.imp)
+        Completed$grp    <- ifelse(is.na(imputed$grp), imp.grp, Completed$grp)
+        #Completed      <- imputed#[,-grep("pred.imp", names(imputed))]
+        
         ## get this complete imputation dataset
-        imputed         <- as.data.frame(impute.transcan(imp, imputation=IMP, data=new.dat.wide, list.out=TRUE, pr=FALSE, check=FALSE))
-        imputed$new.grp <- rbinom(length(imputed$grp),1, imputed$grp)
-        imputed$grp     <- imputed$new.grp
-        completed       <- imputed[,-grep("new.grp", names(imputed))]
-        #tmp             <- completed[names(imputed)] <- cbind.data.frame(imputed)
+        #imputed         <- as.data.frame(impute.transcan(imp, imputation=IMP, data=new.dat.wide, list.out=TRUE, pr=FALSE, check=FALSE))
+        #imputed$new.grp <- rbinom(length(imputed$grp),1, imputed$grp)
+        #imputed$grp     <- imputed$new.grp
+        #completed       <- imputed[,-grep("new.grp", names(imputed))]
         
         ## merge and reshape back to long format
-        Completed <- cbind(new.dat.wide.merge, completed)
+        #Completed <- cbind(new.dat.wide.merge, completed)
         #long.dat <- reshape(Completed, varying=c("y.0","y.1","y.2","y.3","y.4"), direction="long", idvar="id")
         long.dat <- reshape(Completed, varying=c(grep("y\\.", names(Completed), value=TRUE)), direction="long", idvar="id")
         long.dat <- long.dat[order(long.dat$id, long.dat$time),]
@@ -51,8 +59,9 @@ DirectImputation <- function(new.dat, n.imp)
         
     }
     out.tmp <- MIcombine(Ests.Imp, Covs.Imp)
+    
     list(coefficients = out.tmp$coefficients,
-         covariance   = out.tmp$variance)
+         covariance = out.tmp$variance)
 }
 
 
