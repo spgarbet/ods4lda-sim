@@ -57,6 +57,8 @@ simulation <- function(run, count)
   ## for the imputation analysis
   dat$ymean  <- cluster.summary(dat$id, dat$y, mean)
   dat$ytmean <- cluster.summary(dat$id, dat$y*dat$time, mean)
+  dat$tmean  <- cluster.summary(dat$id, dat$time, mean)
+  dat$t2mean <- cluster.summary(dat$id, dat$time^2, mean)
   
   ## Calculate subject specific intercepts and slopes
   IntSlps <- CalcSSIntSlp( Y=dat$y, time=dat$time, id=dat$id)
@@ -158,10 +160,10 @@ simulation <- function(run, count)
   datBivMiss$grp[datBivMiss$SampledBiv==0] <- NA
   datRanMiss$grp[datRanMiss$SampledRan==0] <- NA
 
-  datIntMiss <- datIntMiss[,c("id","y","time","grp","conf","ymean","ytmean")]
-  datSlpMiss <- datSlpMiss[,c("id","y","time","grp","conf","ymean","ytmean")]
-  datBivMiss <- datBivMiss[,c("id","y","time","grp","conf","ymean","ytmean")]
-  datRanMiss <- datRanMiss[,c("id","y","time","grp","conf","ymean","ytmean")]
+  datIntMiss <- datIntMiss[,c("id","y","time","grp","conf","ymean","ytmean","tmean","t2mean")]
+  datSlpMiss <- datSlpMiss[,c("id","y","time","grp","conf","ymean","ytmean","tmean","t2mean")]
+  datBivMiss <- datBivMiss[,c("id","y","time","grp","conf","ymean","ytmean","tmean","t2mean")]
+  datRanMiss <- datRanMiss[,c("id","y","time","grp","conf","ymean","ytmean","tmean","t2mean")]
 
   progress("... ran.mi")
   Fit.ran.mi <- DirectImputation(new.dat=datRanMiss, n.imp=n.imp)
@@ -187,7 +189,7 @@ simulation <- function(run, count)
 ## For exection on local desktop
 # library(parallel)
 # 
-# mclapply(1:200, mc.cores=8, function(x)
+# mclapply(1:4, mc.cores=8, function(x)
 # {
 #  set.seed(x)
 #  sapply(1:4, function(y) simulation(x, y))

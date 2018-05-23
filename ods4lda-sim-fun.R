@@ -2,44 +2,45 @@
 #library(MASS)
 
 expit <- function(x) exp(x)/(1+exp(x))
+
 ## Standardized Gamma Random effect
-gen.std.gam <- function(n.obs, shape, rate){
-    (rgamma(n.obs, shape, rate) - shape/rate)/(sqrt(shape/(rate^2)))
-}
+gen.std.gam <- function(n.obs, shape, rate) (rgamma(n.obs, shape, rate) - shape/rate)/(sqrt(shape/(rate^2)))
 
 ## Standardized T random effect
-gen.std.t <- function(n.obs, df){
-	rt(n.obs, df)*sqrt((df-2)/df)
-	}
+gen.std.t <- function(n.obs, df) rt(n.obs, df)*sqrt((df-2)/df)
+
 
 ## Standardized binormal random effect
-gen.std.binormal <- function(n.obs, mn0, mn1, sd0, sd1, p1){
+gen.std.binormal <- function(n.obs, mn0, mn1, sd0, sd1, p1)
+{
 	group <- rbinom(n.obs, 1, p1)
 	val <- rnorm(n.obs, mn0, sd0)*(1-group)+rnorm(n.obs, mn1, sd1)*group
 	grp.tmp <- rbinom(50000, 1, p1)
 	val.tmp <- rnorm(50000, mn0, sd0)*(1-grp.tmp)+rnorm(50000, mn1, sd1)*grp.tmp
 
-	out <- (val-mean(val.tmp))/(sqrt(var(val.tmp)))
-    out
-	}
+	(val-mean(val.tmp))/(sqrt(var(val.tmp)))
+}
 
 ## Standardized mixture of normals with difference variances
-gen.std.mixnorm <- function(n.obs, mn0, mn1, sd0, sd1, p1, group){
+gen.std.mixnorm <- function(n.obs, mn0, mn1, sd0, sd1, p1, group)
+{
 	val     <- rnorm(n.obs, mn0, sd0)*(1-group)+rnorm(n.obs, mn1, sd1)*group
 	grp.tmp <- rbinom(50000, 1, p1)
 	val.tmp <- rnorm(50000, mn0, sd0)*(1-grp.tmp)+rnorm(50000, mn1, sd1)*grp.tmp
-	out     <- (val-mean(val.tmp))/(sqrt(var(val.tmp)))
-    out
+	
+	(val-mean(val.tmp))/(sqrt(var(val.tmp)))
 }
-GenerateX <- function(N, n, prev.grp, c.parm){
+
+GenerateX <- function(N, n, prev.grp, c.parm)
+{
     id   <- rep(1:N, each=n)
     time <- rep(c(0:(n-1)), N)
     grp.tmp <- rbinom(N,1, prev.grp)
     conf.tmp <- rnorm(N, c.parm[1]+grp.tmp*c.parm[2], 1) 
     grp  <- rep(grp.tmp, each=n)
     conf <- rep(conf.tmp, each=n)
-    out <- data.frame(id=id, time=time, grp=grp, conf=conf)
-    out
+    
+    data.frame(id=id, time=time, grp=grp, conf=conf)
 }
 
 GenerateY <- function(X, Z, id, beta, sig.b0 = 0.25, sig.b1 = 0.25, rho = 0, sig.e = 0.5, RanefDist, ErrorDist){
