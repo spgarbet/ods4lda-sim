@@ -114,7 +114,7 @@ results <- doit(summarize, verbose=TRUE)
 
 results <- cleanup.import(results,
   labels= c("Job", "Scenario", "Sampling", "Method", 
-            rep(c("Intercept", "Group", "Time", "Confounder",
+            rep(c("Intercept", "Time", "Group", "Confounder",
                   "Interaction"), times=4
                )
            )
@@ -130,7 +130,7 @@ The code being tested is available in the git commit hash `42d5898cb42bbdd1928d5
 ### Method
 1600 individuals were simulated using 4 mixed effect models,
 
-$$y_{ij} = 75 - 1 t_{ij} - \frac{1}{2} g_i - R_k c_i -\frac{1}{2} t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
+$$y_{ij} = 75 - 1 t_{ij} - \frac{1}{2} g_i + R_k c_i -\frac{1}{2} t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
 $$\begin{bmatrix} b_{0i} \\ b_{1i} \\ \end{bmatrix} \sim \mathcal{N}\left(
   \begin{bmatrix} 0\\0\\ \end{bmatrix},
   \begin{bmatrix} S_k & 0 \\ 0 & 1.5625 \\ \end{bmatrix} \right)$$
@@ -153,6 +153,99 @@ From these runs, we examine the 95\% coverage intervals, the observed bias of es
 The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and bivariate crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (75 replicates) and indirect multiple imputation exluding one duplicate method for random sampling (wl).
 
 ## Results
+
+### Bias
+
+
+```{r, results='asis', echo=FALSE}
+
+cell_func <- function(table, row, column, fun=NULL, ...)
+{
+  colname <- NULL
+  try({colname <- derive_label(column)}, silent=TRUE)
+  if(is.null(colname)) try({colname <- derive_label(column$left)}, silent=TRUE)
+  if(is.null(colname)) colname <- column$string()
+  table <- col_header(table, colname)
+  major <- unique(row$left$data)
+  minor <- unique(row$right$data)
+
+  for(m in major)
+  {
+    first <- m
+    for(n in minor)
+    {
+      table <- row_header(table, list(first, n), sub=FALSE)
+      first <- ""
+      table <- add_row(table, fun(column, m == row$left$data & n == row$right$data))
+    }
+  }
+  
+  table
+}
+
+est.bias      <- function(column, selector)
+{
+  data  <- column$data[selector]
+  test  <- t.test(data, na.rm=TRUE)
+  cls   <- if(test$p.value < 0.001) "failure" else NULL
+  ci    <- paste0(render_f(test$estimate, 3), 
+                  " (", render_f(test$conf.int[1], 3), ", ",
+                  render_f(test$conf.int[2], 3), ")")
+  cell(ci, class=cls)
+}
+
+bias_table <- function(m)
+{
+  tbl <- tangram(diff.int + diff.time + diff.grp + diff.conf + diff.tg ~ scenario*sampling,
+               data=subset(results, method==tolower(m)), transforms = cell_func, fun=est.bias)
+  html5(tbl, id=paste0(m, "_bias"), caption=paste(m, "Estimator Bias"), inline="nejm.css",          footnote="Values in Pink have p < 0.001")
+}
+
+all_bias_table <- function()
+{
+   all <- paste0(sapply(c("ACML", "MI", "MI2", "WL"), function(m) bias_table(m)), collapse='<br/>')
+   class(all) <- c("html", "character")
+   all
+}
+
+all_bias_table()
+
+```
+<br/>
+
+```{r, , results='asis', echo=FALSE}
+var.bias <- function(column, selector)
+{
+  truth    <- var(column$left$data[selector])   # variance of estimates
+  estimate <- mean(column$right$data[selector]) # mean of estimated variances
+
+  percent  <- 100*(estimate-truth)/truth
+  
+  cls   <- if(abs(percent) > 10) "failure" else NULL
+  cell(render_f(percent, 1), class=cls)
+}
+
+var.bias_table <- function(m)
+{
+  tbl <- tangram(est.int * var.int    +
+                   est.time* var.time + 
+                   est.grp * var.grp  +
+                   est.conf* var.conf +
+                   est.tg  * var.tg   ~ scenario*sampling,
+                 data=subset(results, method==tolower(m)),
+                 transforms = cell_func, fun=var.bias)
+  html5(tbl, id=paste0(m, "_varbias"), caption=paste(m, "Variance Bias Relative Percent"), inline="nejm.css",          footnote="Values in Pink have exceed 10%")
+}
+
+all_var.bias_table <- function()
+{
+   all <- paste0(sapply(c("ACML", "MI", "MI2", "WL"), function(m) var.bias_table(m)), collapse='<br/>')
+   class(all) <- c("html", "character")
+   all
+}
+
+all_var.bias_table()
+```
 
 ### Coverage
 
@@ -254,92 +347,75 @@ all_cover_table <- function()
 all_cover_table()
 ```
 
+### Efficiency
+
 ```{r, results='asis', echo=FALSE}
 
-cell_func <- function(table, row, column, fun=NULL, ...)
-{
-  colname <- NULL
-  try({colname <- derive_label(column)}, silent=TRUE)
-  if(is.null(colname)) try({colname <- derive_label(column$left)}, silent=TRUE)
-  if(is.null(colname)) colname <- column$string()
-  table <- col_header(table, colname)
-  major <- unique(row$left$data)
-  minor <- unique(row$right$data)
+ref <- subset(results, sampling=="random")
 
-  for(m in major)
+efficiency <- function(table, column, row, ref, scenario, ...)
+{
+  ran      <- mean(ref[,row$string()])
+  
+  datac      <- as.categorical(column$data)
+  categories <- levels(datac)
+
+  # Compute overall N values for each category
+  # length(datac[datac == cat & !is.na(datac)])
+  subN <- lapply(categories, FUN=function(cat)
+    cell_n( sum(column$data == cat, na.rm=TRUE), subcol=cat)
+  )
+  
+  table <- col_header(table, derive_label(row))
+
+  table <- row_header(table, scenario)
+  table <- add_row(table, "")
+  for(i in categories)
   {
-    first <- m
-    for(n in minor)
-    {
-      table <- row_header(table, list(first, n), sub=FALSE)
-      first <- ""
-      table <- add_row(table, fun(column, m == row$left$data & n == row$right$data))
-    }
+    table <- row_header(table, paste0("  ", i))
+    table <- add_row(table, render_f(ran/mean(row$data[datac==i]),3))
   }
   
   table
 }
 
-est.bias      <- function(column, selector)
+eff.inner <- function(m, sc)
 {
-  data  <- column$data[selector]
-  test  <- t.test(data, na.rm=TRUE)
-  cls   <- if(test$p.value < 0.001) "failure" else NULL
-  ci    <- paste0(render_f(test$estimate, 3), 
-                  " (", render_f(test$conf.int[1], 3), ", ",
-                  render_f(test$conf.int[2], 3), ")")
-  cell(ci, class=cls)
+  tangram(var.int+var.time+var.grp+var.conf+var.tg ~ sampling,
+          data=subset(results, method==m & scenario==sc),
+          ref=subset(ref,      method=="acml" & scenario==sc),
+          scenario=sc,
+          transforms=efficiency)
 }
-
-bias_table <- function(m)
+eff <- function(m)
 {
-  tbl <- tangram(diff.int + diff.time + diff.grp + diff.conf + diff.tg ~ scenario*sampling,
-               data=subset(results, method==tolower(m)), transforms = cell_func, fun=est.bias)
-  html5(tbl, id=paste0(m, "_bias"), caption=paste(m, "Estimator Bias"), inline="nejm.css",          footnote="Values in Pink have p < 0.001")
+  tbl <- rbind(rbind(rbind(eff.inner(m, 1),eff.inner(m, 2)),eff.inner(m, 3)), eff.inner(m, 4))
+  html5(tbl, id=paste0(m,"_eff"), caption=paste0("Efficiency ",m), inline="nejm.css")
 }
-
-all_bias_table <- function()
-{
-   all <- paste0(sapply(c("ACML", "MI", "MI2", "WL"), function(m) bias_table(m)), collapse='<br/>')
-   class(all) <- c("html", "character")
-   all
-}
-
-all_bias_table()
 
 ```
-<br/>
 
-```{r, , results='asis', echo=FALSE}
-var.bias <- function(column, selector)
-{
-  truth    <- var(column$left$data[selector])   # variance of estimates
-  estimate <- mean(column$right$data[selector]) # mean of estimated variances
+#### ACML 
 
-  percent  <- 100*(estimate-truth)/truth
-  
-  cls   <- if(abs(percent) > 10) "failure" else NULL
-  cell(render_f(percent, 1), class=cls)
-}
-
-var.bias_table <- function(m)
-{
-  tbl <- tangram(est.int * var.int    +
-                   est.time* var.time + 
-                   est.grp * var.grp  +
-                   est.conf* var.conf +
-                   est.tg  * var.tg   ~ scenario*sampling,
-                 data=subset(results, method==tolower(m)),
-                 transforms = cell_func, fun=var.bias)
-  html5(tbl, id=paste0(m, "_varbias"), caption=paste(m, "Variance Bias Relative Percent"), inline="nejm.css",          footnote="Values in Pink have exceed 10%")
-}
-
-all_var.bias_table <- function()
-{
-   all <- paste0(sapply(c("ACML", "MI", "MI2", "WL"), function(m) var.bias_table(m)), collapse='<br/>')
-   class(all) <- c("html", "character")
-   all
-}
-
-all_var.bias_table()
+```{r, results='asis', echo=FALSE}
+eff("acml")
 ```
+
+#### MI
+
+```{r, results='asis', echo=FALSE}
+eff("mi")
+```
+
+#### MI2
+
+```{r, results='asis', echo=FALSE}
+eff("mi2")
+```
+
+#### WL
+
+```{r, results='asis', echo=FALSE}
+eff("wl")
+```
+
