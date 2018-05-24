@@ -34,7 +34,7 @@ DirectImputation <- function(new.dat, n.imp)
     {
         Completed         <- new.dat.wide
         imp.grp         <- rbinom(length(pred.imp),1, pred.imp)
-        Completed$grp    <- ifelse(is.na(imputed$grp), imp.grp, Completed$grp)
+        Completed$grp    <- ifelse(is.na(Completed$grp), imp.grp, Completed$grp)
         #Completed      <- imputed#[,-grep("pred.imp", names(imputed))]
         
         ## get this complete imputation dataset
