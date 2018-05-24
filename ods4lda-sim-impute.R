@@ -18,7 +18,7 @@ cluster.summary <- function(id, x, fun)
 #####################
 DirectImputation <- function(new.dat, n.imp)
 {
-    new.dat=datSlpMiss
+    #new.dat=datSlpMiss
 
     new.dat$grp[is.na(new.dat$grp)] <- 9999
     new.dat.wide <- reshape(new.dat, idvar=c("id", "conf","grp","ymean","ytmean","tmean","t2mean"), timevar=c("time"), direction="wide")
