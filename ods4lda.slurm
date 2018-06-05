@@ -8,7 +8,7 @@
 #SBATCH --time=09:30:00
 #SBATCH --mem=16G
 #SBATCH --output=status/job%a.out
-#SBATCH --array=1-500
+#SBATCH --array=1-2000
 #SBATCH --constrain=haswell
 
 module purge
