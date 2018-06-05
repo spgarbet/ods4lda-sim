@@ -135,7 +135,7 @@ simulation <- function(run, count)
                            cutpoints=c(cutoffs$IntCutBiv, cutoffs$SlpCutBiv), SampProb=SampProbBiv, SampProbiWL=SampProbiBiv, w.function="bivar")
   
   progress("Bivariate WL")
-  Fit.biv.wl  <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datSlp, InitVals=Fit.biv$coefficients, ProfileCol=NA,
+  Fit.biv.wl  <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datBiv, InitVals=Fit.biv$coefficients, ProfileCol=NA,
                            cutpoints=c(cutoffs$IntCutBiv, cutoffs$SlpCutBiv), SampProb=c(1,1), SampProbiWL=SampProbiBivWL, w.function="bivar")
 
     ###########################################################################
