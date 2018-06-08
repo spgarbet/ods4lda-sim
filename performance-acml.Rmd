@@ -28,16 +28,8 @@ library(Hmisc)
 ```
 
 ```{r functions, include=FALSE, cache=TRUE}
-# Known true parameters
-N                <- 1600
-prev.grp         <- 0.25
-conf.param       <- c(-0.5, 1)
-n.imp            <- 75
-
-scenarios <- rbind(c(75, -1, -.5, -1, -.5, log(9), log(1.25), 0, log(3.5)),
-                   c(75, -1, -.5, -4, -.5, log(9), log(1.25), 0, log(3.5)),
-                   c(75, -1, -.5, -1, -.5, log(9), log(1.25), 0, log(3.5)),
-                   c(75, -1, -.5, -4, -.5, log(9), log(1.25), 0, log(3.5)))
+source("ods4lda-sim-setup.R")
+scenarios <- inits.sim
 
 # Helper function for repeated operation over files.
 doit <- function(g, target="output", verbose=FALSE)
@@ -140,11 +132,11 @@ where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is
 
 The 4, $k=[1,4]$, different models are defined by the parameters:
 
-$$ R_k = {-1, -4, -1, -4} $$
+$$ R_k = {-1, -5, -1, -1} $$
 
 $$ S_k = {81, 81, 81, 81}$$
 
-This was used to create between 4 to 6 observations at equally spaced time points for each individual in scenarios 1 and 2, and between 7 and 13 observations for scenarios 3 and 4.
+This was used to create between 4 to 6 observations at equally spaced time points for each individual.
 
 During each of the 2000 runs approximately 400 individuals were sampled using a Bernoulli strategy to target 150 in the lower and upper 10% of targetted stratum (intercept, slope or bivariate) with 100 individuals in the middle 80% of stratum.
 
@@ -260,6 +252,7 @@ coverage <- function(table,
   validrow      <- which(!apply(grid,1,FUN = function(x){all(x == 0)}))
   ncol          <- dim(grid)[2]
   nrow          <- dim(grid)[1]
+  
 
   denominators  <- matrix(rep(colSums(grid), nrow), ncol=ncol, byrow=TRUE)
   rowlabels     <- rownames(grid)
