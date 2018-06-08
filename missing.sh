@@ -9,6 +9,7 @@ do
       echo -ne "$i,"
     fi
 done
+echo ""
 
 echo "Batch 2"
 for i in $(seq 1 2000)
@@ -17,6 +18,7 @@ do
       echo -ne "$i,"
     fi
 done 
+echo ""
 
 echo "Batch 3"
 for i in $(seq 1 2000)
@@ -24,7 +26,8 @@ do
     if [ ! -f "${DIR}/run-$i-3.RData"  ]; then
       echo -ne "$i,"
     fi
-done 
+done
+echo ""
 
 echo "Batch 4"
 for i in $(seq 1 2000)
