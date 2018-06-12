@@ -5,3 +5,5 @@ status
 .Rproj.user
 *.Rproj
 *.html
+*.RData
+*.pdf
