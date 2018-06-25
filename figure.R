@@ -11,8 +11,7 @@ x <- data.frame(
 barplot(x$efficiency*x$baseline, names=x$factor, ylim=c(0,1),
         col=c('grey', 'grey', 'yellow', 'grey', 'yellow'), 
         space=0.1,
-        oma=c(0,0,0,0),
-        labels=FALSE)
+        oma=c(0,0,0,0))
 abline(h=375/n, col='red', lwd=2)
 
 library(tidyr)
@@ -49,16 +48,20 @@ efficiency <-
   summarise(efficiency = reference(scenario, factor)/variance,
             percent    = efficiency*normalize(scenario) )
 
-par(mfrow=c(5, 6), mar=c(1, 0, 1, 0))
-for(smp in c("Intercept", "Slope", "Bivariate"))
-{
-  for(mth in c("ACML", "MI"))
-  {
-    plot(0:1, 0:1, typ="n", axes=FALSE, ann=FALSE)
-    text(0.5, 0, mth, cex=2)
-    text(0.5, 0.5, smp, cex=2.2)
-  }
-}
+# par(mfrow=c(5, 6), mar=c(1, 0, 1, 0))
+# for(smp in c("Intercept", "Slope", "Bivariate"))
+# {
+#   for(mth in c("ACML", "MI"))
+#   {
+#     plot(0:1, 0:1, typ="n", axes=FALSE, ann=FALSE)
+#     text(0.5, 0, mth, cex=2)
+#     text(0.5, 0.5, smp, cex=2.2)
+#   }
+# }
+
+
+layout(matrix( c(25, 25, 26, 26, 27, 27, 28:33, 1:24), byrow=TRUE, ncol=6),
+       heights=c(0.3, 0.3, 1, 1, 1, 1))
 
 for(scn in 1:4)
 {
@@ -69,7 +72,7 @@ for(scn in 1:4)
       x <- subset(efficiency, sampling == smp &
                               method   == mth &
                               scenario == scn)
-      xx <- barplot(x$percent, names=x$factor, ylim=c(0,1),
+      xx <- barplot(x$percent, names=x$factor, ylim=c(0,1.1),
         col=c('grey', 'grey', 'yellow', 'grey', 'yellow'), 
         space=0.1,
         oma=c(0,0,0,0),
@@ -77,8 +80,17 @@ for(scn in 1:4)
         axisnames = FALSE)
       #if(scn == 4)
         mtext(c("I", "T", "G", "C", "TG"), side=1, at=xx,line=0.1, cex=0.67)
-      text(x= xx, y=x$percent, label=sprintf("%04.2f", round(x$efficiency,2)), pos=3, cex=0.8, col='red')
+      box()
       abline(h=NsRand.sim[scn]/N, col='red', lwd=2)
+      text(x= xx, y=x$percent, label=sprintf("%04.2f", round(x$efficiency,2)), pos=1, cex=0.8)
+      text(x= xx, y=x$percent, label=sprintf("%04.2f", round(x$percent,2)), pos=3, cex=0.8)
+      
+      text(xx[1], 1, round(sum(x$percent) / 5 , 2), cex=1.2)
     }
   }
 }
+
+sapply(c("Intercept", "Slope", "Bivariate", rep(c("ACML", "MI"), times=3)), FUN=function(x){
+  plot(0:1, 0:1, typ='n', axes=FALSE, mar=c(0,0,0,0))
+  text(0.5, 0.5, x, cex=2)
+})

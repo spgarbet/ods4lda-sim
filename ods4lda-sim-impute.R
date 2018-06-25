@@ -14,12 +14,11 @@ cluster.summary <- function(id, x, fun)
 
   #############################################################################
  ##
-
-#####################
-DirectImputation <- function(new.dat, n.imp)
-{
+DirectImputation <- function(new.dat, n.imp){
+    
     #new.dat=datSlpMiss
-
+    #n.imp=n.imp
+    
     new.dat$grp[is.na(new.dat$grp)] <- 9999
     new.dat.wide <- reshape(new.dat, idvar=c("id", "conf","grp","ymean","ytmean","tmean","t2mean"), timevar=c("time"), direction="wide")
     new.dat.wide.merge <- new.dat.wide[,c("id",grep("y\\.", names(new.dat.wide), value=TRUE))]
@@ -30,10 +29,11 @@ DirectImputation <- function(new.dat, n.imp)
     pred.imp      <- predict(lrm(grp~conf*(ymean+ytmean+tmean+t2mean), data=new.dat.wide), new.dat.wide, type="fitted")
     
     Ests.Imp <- Covs.Imp <- list()
-    for (IMP in 1:n.imp)
-    {
-        Completed         <- new.dat.wide
-        imp.grp         <- rbinom(length(pred.imp),1, pred.imp)
+    for (IMP in 1:n.imp){
+        cat(IMP)
+        
+        Completed        <- new.dat.wide
+        imp.grp          <- rbinom(length(pred.imp),1, pred.imp)
         Completed$grp    <- ifelse(is.na(Completed$grp), imp.grp, Completed$grp)
         #Completed      <- imputed#[,-grep("pred.imp", names(imputed))]
         
@@ -59,20 +59,18 @@ DirectImputation <- function(new.dat, n.imp)
         
     }
     out.tmp <- MIcombine(Ests.Imp, Covs.Imp)
-    
-    list(coefficients = out.tmp$coefficients,
-         covariance = out.tmp$variance)
+    out <- list(coefficients = out.tmp$coefficients,
+                covariance = out.tmp$variance)
 }
 
 
   #############################################################################
  ##
-IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp)
-{
-    #datSampled <-datSlp
-    #datNotSampled <- datNotSlp
-    #n.imp <- n.imp
-    #Fit <- Fit.slp
+IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp){
+    # datSampled <-datRan
+    # datNotSampled <- datNotRan
+    # n.imp <- n.imp
+    # Fit <- Fit.ran
     Fit <- acml.fit
     
     ProfileCol   <- attr(Fit, "args")$ProfileCol
@@ -86,23 +84,23 @@ IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp)
     
     ## Get estimates and variance-covariance matrix: Profiling is used right now only for the correlation parameter in the covariance matrix for the random effeects distribution
     if (is.na(ProfileCol)){ n.par  <- length(Fit$coefficients)
-    params <- Fit$coefficients
+    coefs <- Fit$coefficients
     vcovs  <- Fit$covariance
     for (m1 in 2:n.par){ for (m2 in 1:(m1-1)){ vcovs[m1,m2] <- vcovs[m2,m1] }}
     }else{ n.par  <- length(Fit$coefficients)
-    params <- c(Fit$coefficients[1:(ProfileCol-1)], 0, Fit$coefficients[ProfileCol:n.par])
+    coefs <- c(Fit$coefficients[1:(ProfileCol-1)], 0, Fit$coefficients[ProfileCol:n.par])
     vcovs  <- cbind(Fit$covariance[,1:(ProfileCol-1) ], 0, Fit$covariance[,ProfileCol:n.par])
     vcovs  <- rbind(vcovs[1:(ProfileCol-1), ], 0, vcovs[ProfileCol:n.par,])
     for (m1 in 2:(n.par+length(ProfileCol))){ for (m2 in 1:(m1-1)){ #print(c(m1,m2))
         vcovs[m1,m2] <- vcovs[m2,m1] }}
     }
     Est.mi <- Cov.mi <- list()
-    for (j in 1:n.imp){ #cat(j)
+    for (j in 1:n.imp){ cat(j)
         
         #######################################################################################
         ## Likelihood ratio piece of the imputation model
         ## Draw a sample from the parameter estimate distribution for the model Y | Xe, Xo, S=1
-        Y.Xe.Xo.Seq1.MI.params <- rmvnorm(1, params, vcovs)
+        Y.Xe.Xo.Seq1.MI.params <- rmvnorm(1, coefs, vcovs)
         
         ## Build exposure model piece of the imputation model based on the insample people.  Based on an offsetted logistic regression
         datSampled.0     <- datSampled.1 <- datSampled
@@ -112,9 +110,9 @@ IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp)
         fixed.matrix0    <- model.matrix(fixed.form, data=datSampled.0)
         fixed.matrix1    <- model.matrix(fixed.form, data=datSampled.1)
         rand.matrix      <- model.matrix(rand.form, data=datSampled.0)
-        tmp.0            <- LogLikeCAndScore(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datSampled.0$id,
+        tmp.0            <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datSampled.0$id,
                                              w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datSampled.0[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
-        tmp.1            <- LogLikeCAndScore(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datSampled.1$id,
+        tmp.1            <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datSampled.1$id,
                                              w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datSampled.1[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
         AC.Xe0.S1        <- exp(tmp.0$logACi)
         AC.Xe1.S1        <- exp(tmp.1$logACi)
@@ -138,10 +136,20 @@ IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp)
         fixed.matrix1    <- model.matrix(fixed.form, data=datNotSampled.1)
         rand.matrix      <- model.matrix(rand.form, data=datNotSampled.0)
         
-        tmp.0 <- LogLikeCAndScore(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datNotSampled.0$id,
-                                  w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datNotSampled.0[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
-        tmp.1 <- LogLikeCAndScore(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datNotSampled.1$id,
-                                  w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datNotSampled.1[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+        tmp.0 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datNotSampled.0$id,
+                                   w.function=datNotSampled.0$Mix.w, 
+                                   cutpoints=cbind(datNotSampled.0$MixCutoff1,datNotSampled.0$MixCutoff2), 
+                                   SampProb=cbind(datNotSampled.0$MixProbLow,datNotSampled.0$MixProbMid, datNotSampled.0$MixProbHigh), 
+                                   SampProbi=datNotSampled.0[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+        tmp.1 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datNotSampled.1$id,
+                                   w.function=datNotSampled.1$Mix.w, 
+                                   cutpoints=cbind(datNotSampled.1$MixCutoff1,datNotSampled.1$MixCutoff2), 
+                                   SampProb=cbind(datNotSampled.1$MixProbLow,datNotSampled.1$MixProbMid, datNotSampled.1$MixProbHigh), 
+                                   SampProbi=datNotSampled.1[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+        # tmp.0 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datNotSampled.0$id,
+        #                           w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datNotSampled.0[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+        # tmp.1 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datNotSampled.1$id,
+        #                          w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datNotSampled.1[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
         prY.Xo.S0.Xe0 <- exp(tmp.0$liC)
         prY.Xo.S0.Xe1 <- exp(tmp.1$liC)
         
@@ -181,7 +189,7 @@ IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp)
         Cov.mi[[j]] <- as.matrix(vcov(lme.mi))
     }
     out.tmp <- MIcombine(Est.mi, Cov.mi)
-    
-    list(coefficients = out.tmp$coefficients,
-         covariance   = out.tmp$variance)
+    out <- list(coefficients = out.tmp$coefficients,
+                covariance   = out.tmp$variance)
+    out
 }
