@@ -1,11 +1,11 @@
-#!/bin/bash
+9.5#!/bin/bash
 
 #SBATCH --mail-user=shawn.garbett@vumc.org
 #SBATCH --mail-type=ALL
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=09:30:00
+#SBATCH --time=01:20:00
 #SBATCH --mem=16G
 #SBATCH --output=status/job%a.out
 #SBATCH --array=1-2000
