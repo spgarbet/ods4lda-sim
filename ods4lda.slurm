@@ -1,4 +1,4 @@
-9.5#!/bin/bash
+#!/bin/bash
 
 #SBATCH --mail-user=shawn.garbett@vumc.org
 #SBATCH --mail-type=ALL
