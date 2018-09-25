@@ -40,17 +40,10 @@ doit <- function(g, target="output", verbose=FALSE)
     if(verbose) cat("Loading ", f, "\n")
     load(f)
     
-    # Use Rob Cov for covariance for wl
-    Fit.int.wl$covariance <- Fit.int.wl$robcov
-    Fit.slp.wl$covariance <- Fit.slp.wl$robcov
-    Fit.biv.wl$covariance <- Fit.biv.wl$robcov
-    
     # This is function to bind the current environment fits into a single list for apply operations
-    fits <- list( Fit.ran,      Fit.int,      Fit.slp,      Fit.biv,
-                                Fit.int.wl,   Fit.slp.wl,   Fit.biv.wl,
-                  Fit.ran.mi,   Fit.int.mi,   Fit.slp.mi,   Fit.biv.mi,
-                  Fit.ran.mi2,  Fit.int.mi2,  Fit.slp.mi2,  Fit.biv.mi2)
-    
+    fits <- list( Fit.ran,      Fit.int,      Fit.slp,      Fit.mix,
+                  Fit.ran.mi,   Fit.int.mi,   Fit.slp.mi,   Fit.mix.mi)
+
     x <- strsplit(f, "-|\\.")[[1]]
     g(fits, as.numeric(x[2]), as.numeric(x[3])) # Run and Scenario
   }))
@@ -85,13 +78,12 @@ summarize <- function(fits, job, scenario)
   est    <- ests(fits)
   var    <- vars(fits)
   result <- data.frame(
-    job      = rep(job, 15),
-    scenario = rep(scenario, 15),
-    sampling = c("random", "intercept", "slope", "bivariate",
-                           "intercept", "slope", "bivariate",
-                "random", "intercept", "slope", "bivariate",
-                "random", "intercept", "slope", "bivariate"),
-    method   = c(rep("acml", 4), rep("wl", 3), rep("mi", 4), rep("mi2",4)))
+    job      = rep(job, 8),
+    scenario = rep(scenario, 8),
+    sampling = c("random", "intercept", "slope", "mixture",
+                 "random", "intercept", "slope", "mixture"),
+    method   = c(rep("acml", 4), rep("mi", 4))
+  )
   
   result <- cbind(result, t(cover), t(diff), t(est), t(var))
   colnames(result) <- c("job", "scenario", "sampling", "method", 
@@ -117,10 +109,21 @@ results <- cleanup.import(results,
 
 In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
 
-The code being tested is available in the git commit hash `42d5898cb42bbdd1928d55691a1c34570a824a24`.
+The code being tested is available in the git commit hash `475f50820a9e59b242510edae00f605b524d38a5`.
 
 ### Method
-1600 individuals were simulated using 4 mixed effect models,
+2000 individuals were simulated using 4 mixed effect models,
+
+
+inits.sim            <- rbind(c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -8, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -2, -.5, log(1.5),log(0.5),0,log(3.5)))
+NsPerStratumUniv.sim <- matrix( c(150,100,150,
+                                  150,100,150,
+                                  150,100,150,
+                                  150,100,150), ncol=3, byrow=TRUE)
+NsRand.sim           <- c(400,400,400,400)
 
 $$y_{ij} = 75 - 1 t_{ij} - \frac{1}{2} g_i + R_k c_i -\frac{1}{2} t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
 $$\begin{bmatrix} b_{0i} \\ b_{1i} \\ \end{bmatrix} \sim \mathcal{N}\left(
@@ -128,21 +131,21 @@ $$\begin{bmatrix} b_{0i} \\ b_{1i} \\ \end{bmatrix} \sim \mathcal{N}\left(
   \begin{bmatrix} S_k & 0 \\ 0 & 1.5625 \\ \end{bmatrix} \right)$$
 
 $$ \epsilon_{ij} \sim \mathcal{N}(0, 12.25)$$
-where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the presence or absence of a confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.4 probability.
+where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the presence or absence of a confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.25 probability.
 
 The 4, $k=[1,4]$, different models are defined by the parameters:
 
-$$ R_k = {-1, -5, -1, -1} $$
+$$ R_k = {-2, -8, -2, -2} $$
 
-$$ S_k = {81, 81, 81, 81}$$
+$$ S_k = {81, 81, 81, 2.25}$$
 
 This was used to create between 4 to 6 observations at equally spaced time points for each individual.
 
-During each of the 2000 runs approximately 400 individuals were sampled using a Bernoulli strategy to target 150 in the lower and upper 10% of targetted stratum (intercept, slope or bivariate) with 100 individuals in the middle 80% of stratum.
+During each of the 2000 runs approximately 400 individuals were sampled using a Bernoulli strategy to target 150 in the lower and upper 10% of targetted stratum (intercept, slope or mixture) with 100 individuals in the middle 80% of stratum. 
 
 From these runs, we examine the 95\% coverage intervals, the observed bias of estimation and compare the variance of the estimates to the average of the variances estimated by the model using both methods on the same subsampled data sets, as well as examine the accuracy and precision.
 
-The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and bivariate crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (75 replicates) and indirect multiple imputation exluding one duplicate method for random sampling (wl).
+The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and mixture crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (75 replicates) and indirect multiple imputation exluding one duplicate method for random sampling (wl).
 
 ## Results
 
@@ -188,14 +191,14 @@ est.bias      <- function(column, selector)
 
 bias_table <- function(m)
 {
-  tbl <- tangram(diff.int + diff.time + diff.grp + diff.conf + diff.tg ~ scenario*sampling,
-               data=subset(results, method==tolower(m)), transforms = cell_func, fun=est.bias)
-  html5(tbl, id=paste0(m, "_bias"), caption=paste(m, "Estimator Bias"), inline="nejm.css",          footnote="Values in Pink have p < 0.001")
+  html5(tangram(diff.int + diff.time + diff.grp + diff.conf + diff.tg ~ scenario*sampling,
+         data=subset(results, method==tolower(m)), transforms = cell_func, fun=est.bias, id=paste0(m, "_bias"),                         caption=paste(m, "Estimator Bias"), style="nejm",
+         footnote="Values in Pink have p < 0.001"))
 }
 
 all_bias_table <- function()
 {
-   all <- paste0(sapply(c("ACML", "MI", "MI2", "WL"), function(m) bias_table(m)), collapse='<br/>')
+   all <- paste0(sapply(c("ACML", "MI"), function(m) bias_table(m)), collapse='<br/>')
    class(all) <- c("html", "character")
    all
 }
@@ -219,19 +222,22 @@ var.bias <- function(column, selector)
 
 var.bias_table <- function(m)
 {
-  tbl <- tangram(est.int * var.int    +
+  html5(tangram(est.int * var.int    +
                    est.time* var.time + 
                    est.grp * var.grp  +
                    est.conf* var.conf +
                    est.tg  * var.tg   ~ scenario*sampling,
-                 data=subset(results, method==tolower(m)),
-                 transforms = cell_func, fun=var.bias)
-  html5(tbl, id=paste0(m, "_varbias"), caption=paste(m, "Variance Bias Relative Percent"), inline="nejm.css",          footnote="Values in Pink have exceed 10%")
+           data=subset(results, method==tolower(m)),
+           transforms = cell_func, fun=var.bias,
+           id=paste0(m, "_varbias"),
+           caption=paste(m, "Variance Bias Relative Percent"),
+           style="nejm",
+           footnote="Values in Pink have exceed 10%"))
 }
 
 all_var.bias_table <- function()
 {
-   all <- paste0(sapply(c("ACML", "MI", "MI2", "WL"), function(m) var.bias_table(m)), collapse='<br/>')
+   all <- paste0(sapply(c("ACML", "MI"), function(m) var.bias_table(m)), collapse='<br/>')
    class(all) <- c("html", "character")
    all
 }
@@ -317,20 +323,18 @@ coverage <- function(table,
 
 cover_table <- function(sample, subbatch)
 {
-  tbl <- tangram(
+  html5(tangram(
            method ~ cover.int+cover.time+cover.grp+cover.conf+cover.tg,
            subset(results, sampling==tolower(sample) & scenario == subbatch),
-           transforms=coverage)
-  html5(
-    tbl,
-    id=paste0(sample,"_",subbatch),
-    caption=paste(sample, "Sampling Coverage Scenario", subbatch),
-    fragment=TRUE, inline="nejm.css", footnote="Values in Pink have p < 0.001")
+           transforms=coverage,
+           id=paste0(sample,"_",subbatch),
+           caption=paste(sample, "Sampling Coverage Scenario", subbatch),
+           style="nejm", footnote="Values in Pink have p < 0.001"))
 }
 
 all_cover_table <- function()
 {
-   all <- paste0(sapply(c("Random", "Intercept", "Slope", "Bivariate"), function(m) {
+   all <- paste0(sapply(c("Random", "Intercept", "Slope", "Mixture"), function(m) {
      paste0(sapply(1:4, function(x) cover_table(m, x)), collapse='<br/>')
    }), collapse='<br/>')
    class(all) <- c("html", "character")
@@ -378,12 +382,12 @@ eff.inner <- function(m, sc)
           data=subset(results, method==m & scenario==sc),
           ref=subset(ref,      method=="acml" & scenario==sc),
           scenario=sc,
-          transforms=efficiency)
+          transforms=efficiency, id="tmp")
 }
 eff <- function(m)
 {
   tbl <- rbind(rbind(rbind(eff.inner(m, 1),eff.inner(m, 2)),eff.inner(m, 3)), eff.inner(m, 4))
-  html5(tbl, id=paste0(m,"_eff"), caption=paste0("Efficiency ",m), inline="nejm.css")
+  html5(tbl, id=paste0(m,"_eff"), caption=paste0("Efficiency ",m), style="nejm")
 }
 
 ```
@@ -400,15 +404,5 @@ eff("acml")
 eff("mi")
 ```
 
-#### MI2
-
-```{r, results='asis', echo=FALSE}
-eff("mi2")
-```
-
-#### WL
-
-```{r, results='asis', echo=FALSE}
-eff("wl")
-```
+Thus concludes this round of simulation.
 

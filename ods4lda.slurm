@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #SBATCH --mail-user=shawn.garbett@vumc.org
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=FAIL
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --time=02:30:00
-#SBATCH --mem=16G
+#SBATCH --mem=4G
 #SBATCH --output=status/job%a.out
 #SBATCH --array=1-2000
 #SBATCH --constrain=haswell
