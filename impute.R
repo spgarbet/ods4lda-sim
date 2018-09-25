@@ -63,24 +63,26 @@ DirectImputation <- function(new.dat, n.imp){
                 covariance = out.tmp$variance)
 }
 
-
   #############################################################################
  ##
-IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp){
-    # datSampled <-datRan
-    # datNotSampled <- datNotRan
-    # n.imp <- n.imp
-    # Fit <- Fit.ran
+IndirectImputation <- function(acml.fit, datSampled, datNotSampled, cutpointsNotSampled, w.functionNotSampled, SampProbNotSampled, n.imp){
+    #datSampled <-datRan
+    #datNotSampled <- datNotRan
+    #cutpointsNotSampled <- cutpointsNotRan
+    #w.functionNotSampled <- w.functionNotRan
+    #SampProbNotSampled <- SampProbNotRan
+    #n.imp <- n.imp
+    #Fit <- Fit.ran
     Fit <- acml.fit
     
     ProfileCol   <- attr(Fit, "args")$ProfileCol
     SampProb     <- attr(Fit, "args")$SampProb
-    SampProbiWL  <- attr(Fit, "args")$SampProbiWL
+    Weights  <- attr(Fit, "args")$Weights
     w.function   <- attr(Fit, "args")$w.function
     cutpoints    <- attr(Fit, "args")$cutpoints
     fixed.form   <- attr(Fit, "args")$formula.fixed
     rand.form    <- attr(Fit, "args")$formula.random
-    SampProbiVar <- attr(Fit, "args")$SampProbiVar
+    WeightsVar <- attr(Fit, "args")$WeightsVar
     
     ## Get estimates and variance-covariance matrix: Profiling is used right now only for the correlation parameter in the covariance matrix for the random effeects distribution
     if (is.na(ProfileCol)){ n.par  <- length(Fit$coefficients)
@@ -111,9 +113,11 @@ IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp){
         fixed.matrix1    <- model.matrix(fixed.form, data=datSampled.1)
         rand.matrix      <- model.matrix(rand.form, data=datSampled.0)
         tmp.0            <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datSampled.0$id,
-                                             w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datSampled.0[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+                                             w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, Weights=datSampled.0[,WeightsVar], 
+                                             ProfileCol=ProfileCol, Keep.liC=TRUE)
         tmp.1            <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datSampled.1$id,
-                                             w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datSampled.1[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+                                             w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, Weights=datSampled.1[,WeightsVar], 
+                                             ProfileCol=ProfileCol, Keep.liC=TRUE)
         AC.Xe0.S1        <- exp(tmp.0$logACi)
         AC.Xe1.S1        <- exp(tmp.1$logACi)
         
@@ -136,20 +140,22 @@ IndirectImputation <- function(acml.fit, datSampled, datNotSampled, n.imp){
         fixed.matrix1    <- model.matrix(fixed.form, data=datNotSampled.1)
         rand.matrix      <- model.matrix(rand.form, data=datNotSampled.0)
         
-        tmp.0 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datNotSampled.0$id,
-                                   w.function=datNotSampled.0$Mix.w, 
-                                   cutpoints=cbind(datNotSampled.0$MixCutoff1,datNotSampled.0$MixCutoff2), 
-                                   SampProb=cbind(datNotSampled.0$MixProbLow,datNotSampled.0$MixProbMid, datNotSampled.0$MixProbHigh), 
-                                   SampProbi=datNotSampled.0[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
-        tmp.1 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datNotSampled.1$id,
-                                   w.function=datNotSampled.1$Mix.w, 
-                                   cutpoints=cbind(datNotSampled.1$MixCutoff1,datNotSampled.1$MixCutoff2), 
-                                   SampProb=cbind(datNotSampled.1$MixProbLow,datNotSampled.1$MixProbMid, datNotSampled.1$MixProbHigh), 
-                                   SampProbi=datNotSampled.1[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
         # tmp.0 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datNotSampled.0$id,
-        #                           w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datNotSampled.0[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+        #                            w.function=datNotSampled.0$Mix.w, 
+        #                            cutpoints=cbind(datNotSampled.0$MixCutoff1,datNotSampled.0$MixCutoff2), 
+        #                            SampProb=cbind(datNotSampled.0$MixProbLow,datNotSampled.0$MixProbMid, datNotSampled.0$MixProbHigh), 
+        #                            Weights=datNotSampled.0[,WeightsVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
         # tmp.1 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datNotSampled.1$id,
-        #                          w.function=w.function, cutpoints=cutpoints, SampProb=SampProb, SampProbi=datNotSampled.1[,SampProbiVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+        #                            w.function=datNotSampled.1$Mix.w, 
+        #                            cutpoints=cbind(datNotSampled.1$MixCutoff1,datNotSampled.1$MixCutoff2), 
+        #                            SampProb=cbind(datNotSampled.1$MixProbLow,datNotSampled.1$MixProbMid, datNotSampled.1$MixProbHigh), 
+        #                            Weights=datNotSampled.1[,WeightsVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+        tmp.0 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datNotSampled.0$id,
+                                   w.function=w.functionNotSampled, cutpoints=cutpointsNotSampled, SampProb=SampProbNotSampled, 
+                                   Weights=datNotSampled.0[,WeightsVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
+        tmp.1 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datNotSampled.1$id,
+                                   w.function=w.functionNotSampled, cutpoints=cutpointsNotSampled, SampProb=SampProbNotSampled, 
+                                   Weights=datNotSampled.1[,WeightsVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
         prY.Xo.S0.Xe0 <- exp(tmp.0$liC)
         prY.Xo.S0.Xe1 <- exp(tmp.1$liC)
         

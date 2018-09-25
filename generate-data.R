@@ -1,5 +1,4 @@
-#library(MASS, lib.loc="/usr/local/biostat_r/lib/R")
-#library(MASS)
+
 
 expit <- function(x) exp(x)/(1+exp(x))
 
@@ -8,7 +7,6 @@ gen.std.gam <- function(n.obs, shape, rate) (rgamma(n.obs, shape, rate) - shape/
 
 ## Standardized T random effect
 gen.std.t <- function(n.obs, df) rt(n.obs, df)*sqrt((df-2)/df)
-
 
 ## Standardized binormal random effect
 gen.std.binormal <- function(n.obs, mn0, mn1, sd0, sd1, p1)
