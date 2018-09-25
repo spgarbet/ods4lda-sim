@@ -14,9 +14,9 @@ library(mitools)
 library(MASS)
 library(mvtnorm)
 source("functions.R") # instead of library(ODS4LDA)
-source("ods4lda-sim-fun.R")
-source("ods4lda-sim-impute.R")
-source("ods4lda-sim-setup.R")
+source("generate-data.R")
+source("impute.R")
+source("setup.R")
 
 options(width=200)
 
