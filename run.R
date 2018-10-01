@@ -13,6 +13,7 @@ library(nlme)
 library(mitools)
 library(MASS)
 library(mvtnorm)
+library(TwoPhaseReg)
 source("functions.R") # instead of library(ODS4LDA)
 source("generate-data.R")
 source("impute.R")
@@ -237,6 +238,33 @@ simulation <- function(run, count)
   Fit.mix2.mi <- IndirectImputation(acml.fit=Fit.mix2, datSampled=datMix2, datNotSampled=datNotMix2, 
                                    cutpointsNotSampled=cutpointsNotMix2, w.functionNotSampled=w.functionNotMix2, SampProbNotSampled=SampProbNotMix2, n.imp=n.imp) 
 
+    ###########################################################################
+   ##
+  progress("Two Phase Reg")
+  
+  progress("... Random")
+  interest <- c("id", "time", "grp", "conf", "y")
+  x <- datRan[, interest]
+  y <- datNotRan[, interest]
+  y$grp <- NA
+  x <- rbind(x, y)
+  simZ <- unique(x$id)
+  n <- length(simZ) # number of subjects in the dataset
+  N_SIEVE <- 10 # number of breaks in the histogram, set for 10 now but may need to fine tune it later
+  simBspline_Z <- matrix(NA, nrow=n, ncol=N_SIEVE)
+  cut_z <- cut(simZ, breaks=quantile(simZ, probs=seq(0, 1, 1/N_SIEVE)), include.lowest = TRUE) # split the range of Z into evenly N_SIEVE spaced quantiles
+  for (i in 1:N_SIEVE) 
+    simBspline_Z[,i] <- as.numeric(cut_z == names(table(cut_z))[i]) # create the indicators for each quantile
+  colnames(simBspline_Z) = paste("bs", 1:N_SIEVE, sep="")
+  
+  Fit.ran.2p <- smle_lmm(
+    ID="id", Y="y", Time="time", X="grp", Z = "conf",
+    Bspline_Z = colnames(simBspline_Z),
+    data = x)
+
+  
+    ###########################################################################
+   ##
   progress(paste0("Run ", count, " complete. Saving data."))
   
   save( Fit.ran,      Fit.int,      Fit.slp,      Fit.mix1,     Fit.mix2,

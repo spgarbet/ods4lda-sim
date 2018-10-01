@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=06:30:00
+#SBATCH --time=06:00:00
 #SBATCH --mem=4G
 #SBATCH --output=status/job%a.out
 #SBATCH --array=1-2000
