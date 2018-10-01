@@ -18,6 +18,7 @@ source("functions.R") # instead of library(ODS4LDA)
 source("generate-data.R")
 source("impute.R")
 source("setup.R")
+source("two_phase.R")
 
 options(width=200)
 
@@ -243,26 +244,10 @@ simulation <- function(run, count)
   progress("Two Phase Reg")
   
   progress("... Random")
-  interest <- c("id", "time", "grp", "conf", "y")
-  x <- datRan[, interest]
-  y <- datNotRan[, interest]
-  y$grp <- NA
-  x <- rbind(x, y)
-  simZ <- unique(x$id)
-  n <- length(simZ) # number of subjects in the dataset
-  N_SIEVE <- 10 # number of breaks in the histogram, set for 10 now but may need to fine tune it later
-  simBspline_Z <- matrix(NA, nrow=n, ncol=N_SIEVE)
-  cut_z <- cut(simZ, breaks=quantile(simZ, probs=seq(0, 1, 1/N_SIEVE)), include.lowest = TRUE) # split the range of Z into evenly N_SIEVE spaced quantiles
-  for (i in 1:N_SIEVE) 
-    simBspline_Z[,i] <- as.numeric(cut_z == names(table(cut_z))[i]) # create the indicators for each quantile
-  colnames(simBspline_Z) = paste("bs", 1:N_SIEVE, sep="")
-  
-  Fit.ran.2p <- smle_lmm(
-    ID="id", Y="y", Time="time", X="grp", Z = "conf",
-    Bspline_Z = colnames(simBspline_Z),
-    data = x)
 
+  Fit.ran.2p <- two_phase(datRan, datNotRan)
   
+
     ###########################################################################
    ##
   progress(paste0("Run ", count, " complete. Saving data."))
