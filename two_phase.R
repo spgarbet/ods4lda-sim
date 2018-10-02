@@ -1,4 +1,4 @@
-two_phase <- c(sampled, notsampled)
+two_phase <- function(sampled, notsampled)
 {
   interest <- c("id", "time", "grp", "conf", "y")
   x <- sampled[, interest]
@@ -18,8 +18,16 @@ two_phase <- c(sampled, notsampled)
   
   x <- cbind(x, as.data.frame(simBspline_Z[expand,]))
   
-  smle_lmm(
-    ID="id", Y="y", Time="time", X="grp", Z="conf",
-    Bspline_Z = colnames(simBspline_Z),
-    data = x)
+  fit <- smle_lmm(ID="id", Y="y", Time="time", X="grp", Z="conf",
+                  Bspline_Z = colnames(simBspline_Z), data = x)
+  
+  reorder <- c(1,4,2,3,5) # Reorder to ordering of other fits
+  coef <- fit$coefficients[reorder, 1]
+  serr <- fit$coefficients[reorder, 2]
+  
+  fit$coefficients <- coef
+  fit$covariance <- matrix(rep(0, 25), nrow=5)
+  diag(fit$covariance) <- serr^2
+  
+  fit
 }

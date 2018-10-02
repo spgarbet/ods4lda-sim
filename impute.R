@@ -30,7 +30,7 @@ DirectImputation <- function(new.dat, n.imp){
     
     Ests.Imp <- Covs.Imp <- list()
     for (IMP in 1:n.imp){
-        cat(IMP)
+        #cat(IMP)
         
         Completed        <- new.dat.wide
         imp.grp          <- rbinom(length(pred.imp),1, pred.imp)
@@ -97,7 +97,7 @@ IndirectImputation <- function(acml.fit, datSampled, datNotSampled, cutpointsNot
         vcovs[m1,m2] <- vcovs[m2,m1] }}
     }
     Est.mi <- Cov.mi <- list()
-    for (j in 1:n.imp){ cat(j)
+    for (j in 1:n.imp){ #cat(j)
         
         #######################################################################################
         ## Likelihood ratio piece of the imputation model

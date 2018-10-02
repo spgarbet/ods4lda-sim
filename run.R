@@ -31,7 +31,7 @@ progress   <- function(...)
   lapply(list(...), function(x) cat(x,'\n'))
 }
 
-# Coverage of fit
+## Coverage of fit
 covered <- function(fit, truth)
 {
   rng   <- 1:5
@@ -42,7 +42,7 @@ covered <- function(fit, truth)
   (truth[rng] >= lci) & (truth[rng] <= uci)
 }
 
-# Coverage of a list of fits
+## Coverage of a list of fits
 coverage <- function(fits, truth)
 {
   result <- t(sapply(fits, function(f) covered(f, truth)))
@@ -50,7 +50,7 @@ coverage <- function(fits, truth)
   as.data.frame(result)
 }
 
-# Difference of a list of fits from truth
+## Difference of a list of fits from truth
 diffs    <- function(fits, truth)
 {
   result <- t(sapply(fits, function(f) f$coefficients[1:5] - truth[1:5]))
@@ -58,7 +58,7 @@ diffs    <- function(fits, truth)
   as.data.frame(result)
 }
 
-# The estimates returned from list of fits
+## The estimates returned from list of fits
 ests     <- function(fits)
 {
   result <- t(sapply(fits, function(f) f$coefficients[1:5]))
@@ -66,7 +66,7 @@ ests     <- function(fits)
   as.data.frame(result)
 }
 
-# Variance of estimates from list of fits
+## Variance of estimates from list of fits
 vars     <- function(fits)
 {
   result <- t(sapply(fits, function(f) diag(f$covariance)[1:5]))
@@ -249,18 +249,22 @@ simulation <- function(run, count)
   progress("... Intercept")
   Fit.int.wl  <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datInt, InitVals=inits, ProfileCol=NA,
                             cutpoints=cutpointsInt, SampProb=matrix(1, nrow=nrow(datInt), ncol=3), Weights=WeightsInt, w.function=w.functionInt)
+  Fit.int.wl$covariance <- Fit.int.wl$robcov # Use sandwich instead
 
   progress("... Slope")
   Fit.slp.wl  <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datSlp, InitVals=inits, ProfileCol=NA,
                             cutpoints=cutpointsSlp, SampProb=matrix(1, nrow=nrow(datSlp), ncol=3), Weights=WeightsSlp, w.function=w.functionSlp)
+  Fit.slp.wl$covariance <- Fit.slp.wl$robcov # Use sandwich instead
   
   progress("... Mixture 1")  
   Fit.mix1.wl <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datMix1, InitVals=inits, ProfileCol=NA,
                             cutpoints=cutpointsMix1, SampProb=matrix(1, nrow=nrow(datMix1), ncol=3), Weights=WeightsMix1, w.function=w.functionMix1)
+  Fit.mix1.wl$covariance <- Fit.mix1.wl$robcov # Use sandwich instead
 
   progress("... Mixture 2")  
   Fit.mix2.wl <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datMix2, InitVals=inits, ProfileCol=NA,
                             cutpoints=cutpointsMix2, SampProb=matrix(1, nrow=nrow(datMix2), ncol=3), Weights=WeightsMix2, w.function=w.functionMix2)
+  Fit.mix2.wl$covariance <- Fit.mix2.wl$robcov # Use sandwich instead
   
     ###########################################################################
    ##
