@@ -28,7 +28,7 @@ options(width=200)
 progress   <- function(...)
 {
   cat(date(), ' ')
-  lapply(list(...), function(x) cat(x,'\n'))
+  invisible(lapply(list(...), function(x) cat(x,'\n')))
 }
 
 ## Coverage of fit
@@ -126,7 +126,7 @@ simulation <- function(run, count)
   dat$WeightsMix1  <- 1/(SampledInt[[2]]*(dat$id <= N/3) + SampledSlp[[2]]*(dat$id > N/3))
   dat$WeightsMix2  <- 1/(SampledInt[[2]]*(dat$id <= 2*N/3) + SampledSlp[[2]]*(dat$id > 2*N/3))
   
-  dat$NoWeighting  <-1
+  dat$NoWeighting  <- 1
   
   dat$IntProbLow   <- SampledInt[[3]][1]
   dat$IntProbMid   <- SampledInt[[3]][2]
