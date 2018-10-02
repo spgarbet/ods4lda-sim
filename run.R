@@ -24,11 +24,54 @@ options(width=200)
 
   #############################################################################
  ##
-## Progress helper
+## Helper Functions For Run
 progress   <- function(...)
 {
   cat(date(), ' ')
   lapply(list(...), function(x) cat(x,'\n'))
+}
+
+# Coverage of fit
+covered <- function(fit, truth)
+{
+  rng   <- 1:5
+  ses   <- sqrt(diag(fit$covariance))[rng]
+  lci   <- fit$coefficients[rng] - qnorm(.975)*ses
+  uci   <- fit$coefficients[rng] + qnorm(.975)*ses
+
+  (truth[rng] >= lci) & (truth[rng] <= uci)
+}
+
+# Coverage of a list of fits
+coverage <- function(fits, truth)
+{
+  result <- t(sapply(fits, function(f) covered(f, truth)))
+  colnames(result) <- c("cover.int", "cover.time", "cover.grp", "cover.conf", "cover.tg")
+  as.data.frame(result)
+}
+
+# Difference of a list of fits from truth
+diffs    <- function(fits, truth)
+{
+  result <- t(sapply(fits, function(f) f$coefficients[1:5] - truth[1:5]))
+  colnames(result) <- c("diff.int", "diff.time", "diff.grp", "diff.conf", "diff.tg")
+  as.data.frame(result)
+}
+
+# The estimates returned from list of fits
+ests     <- function(fits)
+{
+  result <- t(sapply(fits, function(f) f$coefficients[1:5]))
+  colnames(result) <- c("est.int", "est.time", "est.grp", "est.conf", "est.tg")
+  as.data.frame(result)
+}
+
+# Variance of estimates from list of fits
+vars     <- function(fits)
+{
+  result <- t(sapply(fits, function(f) diag(f$covariance)[1:5]))
+  colnames(result) <- c("var.int", "var.time", "var.grp", "var.conf", "var.tg")
+  as.data.frame(result)
 }
 
   #############################################################################
@@ -244,17 +287,57 @@ simulation <- function(run, count)
   progress("Two Phase Reg")
   
   progress("... Random")
-
   Fit.ran.2p <- two_phase(datRan, datNotRan)
+
+  progress("... Intercept")
+  Fit.int.2p <- two_phase(datInt, datNotInt)
+
+  progress("... Slope")
+  Fit.slp.2p <- two_phase(datSlp, datNotSlp)
+
+  progress("... Mixture 1")
+  Fit.mix1.2p <- two_phase(datMix1, datNotMix1)
   
+  progress("... Mixture 2")
+  Fit.mix2.2p <- two_phase(datMix2, datNotMix2)
 
     ###########################################################################
    ##
-  progress(paste0("Run ", count, " complete. Saving data."))
+  progress("Saving results.")
   
-  save( Fit.ran,      Fit.int,      Fit.slp,      Fit.mix1,     Fit.mix2,
-                      Fit.int.wl,   Fit.slp.wl,   Fit.mix1.wl,  Fit.mix2.wl,
-        Fit.ran.mi,   Fit.int.mi,   Fit.slp.mi,   Fit.mix1.mi,  Fit.mix2.mi,
+  fits <- list(
+    Fit.ran,      Fit.int,      Fit.slp,      Fit.mix1,     Fit.mix2,
+                  Fit.int.wl,   Fit.slp.wl,   Fit.mix1.wl,  Fit.mix2.wl,
+    Fit.ran.mi,   Fit.int.mi,   Fit.slp.mi,   Fit.mix1.mi,  Fit.mix2.mi,
+    Fit.ran.2p,   Fit.int.2p,   Fit.slp.2p,   Fit.mix1.2p,  Fit.mix2.2p
+  )
+  
+  results <- data.frame(
+    Job      = rep(run,   19),
+    Scenario = rep(count, 19),
+    Sampling = factor(c(
+      "Random", "Intercept", "Slope", "Mix1", "Mix2",
+                "Intercept", "Slope", "Mix1", "Mix2",
+      "Random", "Intercept", "Slope", "Mix1", "Mix2",
+      "Random", "Intercept", "Slope", "Mix1", "Mix2"
+    )),
+    Method   = factor(c(
+      rep("ACML",     5),
+      rep("WL",       4),
+      rep("MI",       5),
+      rep("TwoPhase", 5)
+    ))
+  )
+  
+  results <- cbind(results,
+                   coverage(fits, inits),
+                   diffs(fits, inits),
+                   ests(fits),
+                   vars(fits))
+  
+  save( results,
         file=paste0("output/run-", run, "-", count, ".RData")
-      ) 
+      )
+  
+  progress(paste0("Run ", count, " complete."))
 }

@@ -5,7 +5,7 @@ two_phase <- c(sampled, notsampled)
   y <- notsampled[, interest]
   y$grp <- NA
   x <- rbind(x, y)
-  simZ <- unique(x$id)
+  simZ <- unique(x$conf)
   n <- length(simZ) # number of subjects in the dataset
   N_SIEVE <- 10 # number of breaks in the histogram, set for 10 now but may need to fine tune it later
   simBspline_Z <- matrix(NA, nrow=n, ncol=N_SIEVE)
