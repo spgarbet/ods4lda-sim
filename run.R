@@ -87,53 +87,53 @@ simulation <- function(run, count)
   NsRand           <- sum(NsPerStratumUniv)
   
   progress("Generate cutoffs using a population of 10000")
-  dat.tmp   <- GenerateX(N=25000, n=ni[2], prev.grp=prev.grp, c.parm=conf.param)
-  dat.tmp$y <- GenerateY(X=cbind(1, dat.tmp$time, dat.tmp$grp, dat.tmp$conf, dat.tmp$time*dat.tmp$grp), Z=cbind(1, dat.tmp$time), id=dat.tmp$id,
-                         beta=inits[1:5], sig.b0 = exp(inits[6]), sig.b1 =exp(inits[7]), rho = inits[8], sig.e = exp(inits[9]), RanefDist="Gaussian", ErrorDist="Gaussian")
-  cutoffs  <- est.cutoffs(Y=dat.tmp$y, time=dat.tmp$time, id=dat.tmp$id, PropInCentralRegion=p.central)
+  dat.tmp          <- GenerateX(N=25000, n=ni[2], prev.grp=prev.grp, c.parm=conf.param)
+  dat.tmp$y        <- GenerateY(X=cbind(1, dat.tmp$time, dat.tmp$grp, dat.tmp$conf, dat.tmp$time*dat.tmp$grp), Z=cbind(1, dat.tmp$time), id=dat.tmp$id,
+                                beta=inits[1:5], sig.b0 = exp(inits[6]), sig.b1 =exp(inits[7]), rho = inits[8], sig.e = exp(inits[9]), RanefDist="Gaussian", ErrorDist="Gaussian")
+  cutoffs          <- est.cutoffs(Y=dat.tmp$y, time=dat.tmp$time, id=dat.tmp$id, PropInCentralRegion=p.central)
 
   progress("Generate random data from truth")
-  dat      <- GenerateX(N=N, n=ni[2], prev.grp=prev.grp, c.parm=conf.param)
-  dat$y    <- GenerateY(X=cbind(1, dat$time, dat$grp, dat$conf, dat$time*dat$grp), Z=cbind(1, dat$time), id=dat$id,
-                        beta=inits[1:5], sig.b0 = exp(inits[6]), sig.b1 =exp(inits[7]), rho = inits[8], sig.e = exp(inits[9]), RanefDist="Gaussian", ErrorDist="Gaussian")
-  dat      <- dat[order(dat$id, dat$time),]
-  droptime <- rep(sample(seq(ni[1], ni[2]), N, replace=TRUE), each=ni[2]) - 1
-  dat      <- dat[dat$time<=droptime,]
+  dat              <- GenerateX(N=N, n=ni[2], prev.grp=prev.grp, c.parm=conf.param)
+  dat$y            <- GenerateY(X=cbind(1, dat$time, dat$grp, dat$conf, dat$time*dat$grp), Z=cbind(1, dat$time), id=dat$id,
+                                beta=inits[1:5], sig.b0 = exp(inits[6]), sig.b1 =exp(inits[7]), rho = inits[8], sig.e = exp(inits[9]), RanefDist="Gaussian", ErrorDist="Gaussian")
+  dat              <- dat[order(dat$id, dat$time),]
+  droptime         <- rep(sample(seq(ni[1], ni[2]), N, replace=TRUE), each=ni[2]) - 1
+  dat              <- dat[dat$time<=droptime,]
   
-  IntSlps <- CalcSSIntSlp( Y=dat$y, time=dat$time, id=dat$id)
-  dat$Int <- IntSlps[[1]]
-  dat$Slp <- IntSlps[[2]]
+  IntSlps          <- CalcSSIntSlp( Y=dat$y, time=dat$time, id=dat$id)
+  dat$Int          <- IntSlps[[1]]
+  dat$Slp          <- IntSlps[[2]]
 
   ## identify stratum membership
-  dat$StratInt <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="intercept", cutpoints=cutoffs$IntCutUniv, Int=dat$Int, Slp=dat$Slp)
-  dat$StratSlp <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="slope",     cutpoints=cutoffs$SlpCutUniv, Int=dat$Int, Slp=dat$Slp)
+  dat$StratInt     <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="intercept", cutpoints=cutoffs$IntCutUniv, Int=dat$Int, Slp=dat$Slp)
+  dat$StratSlp     <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="slope",     cutpoints=cutoffs$SlpCutUniv, Int=dat$Int, Slp=dat$Slp)
  
   ## identify those sampled along with individual sampling probs and stratum sampling probs
-  SampledRan <- random.sampling(id.long=dat$id, n=NsRand)
-  SampledInt <- ods.sampling(id.long=dat$id, stratum.long=dat$StratInt, SamplingStrategy="IndepODS", NsPerStratum=NsPerStratumUniv)
-  SampledSlp <- ods.sampling(id.long=dat$id, stratum.long=dat$StratSlp, SamplingStrategy="IndepODS", NsPerStratum=NsPerStratumUniv)
+  SampledRan       <- random.sampling(id.long=dat$id, n=NsRand)
+  SampledInt       <- ods.sampling(id.long=dat$id, stratum.long=dat$StratInt, SamplingStrategy="IndepODS", NsPerStratum=NsPerStratumUniv)
+  SampledSlp       <- ods.sampling(id.long=dat$id, stratum.long=dat$StratSlp, SamplingStrategy="IndepODS", NsPerStratum=NsPerStratumUniv)
   
   ## add who will be sampled for each design to dat
-  dat$SampledRan <- SampledRan
-  dat$SampledInt <- SampledInt[[1]]
-  dat$SampledSlp <- SampledSlp[[1]]
-  dat$SampledMix1 <- dat$SampledInt*(dat$id <= N/3) + dat$SampledSlp*(dat$id > N/3)
-  dat$SampledMix2 <- dat$SampledInt*(dat$id <= 2*N/3) + dat$SampledSlp*(dat$id > 2*N/3)
+  dat$SampledRan   <- SampledRan
+  dat$SampledInt   <- SampledInt[[1]]
+  dat$SampledSlp   <- SampledSlp[[1]]
+  dat$SampledMix1  <- dat$SampledInt*(dat$id <= N/3) + dat$SampledSlp*(dat$id > N/3)
+  dat$SampledMix2  <- dat$SampledInt*(dat$id <= 2*N/3) + dat$SampledSlp*(dat$id > 2*N/3)
   
   ## Added subject specific sampling weights for each design if doing a weighted likelihood analysis
-  dat$WeightsInt <- 1/SampledInt[[2]]
-  dat$WeightsSlp <- 1/SampledSlp[[2]]
-  dat$WeightsMix1 <- 1/(SampledInt[[2]]*(dat$id <= N/3) + SampledSlp[[2]]*(dat$id > N/3))
-  dat$WeightsMix2 <- 1/(SampledInt[[2]]*(dat$id <= 2*N/3) + SampledSlp[[2]]*(dat$id > 2*N/3))
+  dat$WeightsInt   <- 1/SampledInt[[2]]
+  dat$WeightsSlp   <- 1/SampledSlp[[2]]
+  dat$WeightsMix1  <- 1/(SampledInt[[2]]*(dat$id <= N/3) + SampledSlp[[2]]*(dat$id > N/3))
+  dat$WeightsMix2  <- 1/(SampledInt[[2]]*(dat$id <= 2*N/3) + SampledSlp[[2]]*(dat$id > 2*N/3))
   
-  dat$NoWeighting <-1
+  dat$NoWeighting  <-1
   
-  dat$IntProbLow  <- SampledInt[[3]][1]
-  dat$IntProbMid  <- SampledInt[[3]][2]
-  dat$IntProbHigh <- SampledInt[[3]][3]
-  dat$SlpProbLow  <- SampledSlp[[3]][1]
-  dat$SlpProbMid  <- SampledSlp[[3]][2]
-  dat$SlpProbHigh <- SampledSlp[[3]][3]
+  dat$IntProbLow   <- SampledInt[[3]][1]
+  dat$IntProbMid   <- SampledInt[[3]][2]
+  dat$IntProbHigh  <- SampledInt[[3]][3]
+  dat$SlpProbLow   <- SampledSlp[[3]][1]
+  dat$SlpProbMid   <- SampledSlp[[3]][2]
+  dat$SlpProbHigh  <- SampledSlp[[3]][3]
   dat$Mix1ProbLow  <- SampledInt[[3]][1]*(dat$id <= N/3) + SampledSlp[[3]][1]*(dat$id > N/3)
   dat$Mix1ProbMid  <- SampledInt[[3]][2]*(dat$id <= N/3) + SampledSlp[[3]][2]*(dat$id > N/3)
   dat$Mix1ProbHigh <- SampledInt[[3]][3]*(dat$id <= N/3) + SampledSlp[[3]][3]*(dat$id > N/3)
@@ -141,78 +141,78 @@ simulation <- function(run, count)
   dat$Mix2ProbMid  <- SampledInt[[3]][2]*(dat$id <= 2*N/3) + SampledSlp[[3]][2]*(dat$id > 2*N/3)
   dat$Mix2ProbHigh <- SampledInt[[3]][3]*(dat$id <= 2*N/3) + SampledSlp[[3]][3]*(dat$id > 2*N/3)
   
-  dat$IntCutoff1 <- cutoffs$IntCutUniv[1]
-  dat$IntCutoff2 <- cutoffs$IntCutUniv[2]
-  dat$SlpCutoff1 <- cutoffs$SlpCutUniv[1]
-  dat$SlpCutoff2 <- cutoffs$SlpCutUniv[2]
-  dat$Mix1Cutoff1 <- dat$IntCutoff1*(dat$id <= N/3) + dat$SlpCutoff1*(dat$id > N/3)
-  dat$Mix1Cutoff2 <- dat$IntCutoff2*(dat$id <= N/3) + dat$SlpCutoff2*(dat$id > N/3)
-  dat$Mix2Cutoff1 <- dat$IntCutoff1*(dat$id <= 2*N/3) + dat$SlpCutoff1*(dat$id > 2*N/3)
-  dat$Mix2Cutoff2 <- dat$IntCutoff2*(dat$id <= 2*N/3) + dat$SlpCutoff2*(dat$id > 2*N/3)
+  dat$IntCutoff1   <- cutoffs$IntCutUniv[1]
+  dat$IntCutoff2   <- cutoffs$IntCutUniv[2]
+  dat$SlpCutoff1   <- cutoffs$SlpCutUniv[1]
+  dat$SlpCutoff2   <- cutoffs$SlpCutUniv[2]
+  dat$Mix1Cutoff1  <- dat$IntCutoff1*(dat$id <= N/3) + dat$SlpCutoff1*(dat$id > N/3)
+  dat$Mix1Cutoff2  <- dat$IntCutoff2*(dat$id <= N/3) + dat$SlpCutoff2*(dat$id > N/3)
+  dat$Mix2Cutoff1  <- dat$IntCutoff1*(dat$id <= 2*N/3) + dat$SlpCutoff1*(dat$id > 2*N/3)
+  dat$Mix2Cutoff2  <- dat$IntCutoff2*(dat$id <= 2*N/3) + dat$SlpCutoff2*(dat$id > 2*N/3)
   
-  dat$Int.w <- "intercept"
-  dat$Slp.w <- "slope"
-  dat$Mix1.w <- ifelse(dat$id <= N/3, dat$Int.w, dat$Slp.w)
-  dat$Mix2.w <- ifelse(dat$id <= 2*N/3, dat$Int.w, dat$Slp.w)
+  dat$Int.w        <- "intercept"
+  dat$Slp.w        <- "slope"
+  dat$Mix1.w       <- ifelse(dat$id <= N/3, dat$Int.w, dat$Slp.w)
+  dat$Mix2.w       <- ifelse(dat$id <= 2*N/3, dat$Int.w, dat$Slp.w)
   
   ## Stratum Sampling probabilities
-  SampProbRan <- c(1,1,1)
-  SampProbInt <- SampledInt[[3]]
-  SampProbSlp <- SampledSlp[[3]]
+  SampProbRan      <- c(1,1,1)
+  SampProbInt      <- SampledInt[[3]]
+  SampProbSlp      <- SampledSlp[[3]]
   
   ## Datasets for sampled subjects
-  datRan <- dat[dat$SampledRan==1,]
-  datInt <- dat[dat$SampledInt==1,]
-  datSlp <- dat[dat$SampledSlp==1,]
-  datMix1 <- dat[dat$SampledMix1==1,]
-  datMix2 <- dat[dat$SampledMix2==1,]
+  datRan           <- dat[dat$SampledRan==1,]
+  datInt           <- dat[dat$SampledInt==1,]
+  datSlp           <- dat[dat$SampledSlp==1,]
+  datMix1          <- dat[dat$SampledMix1==1,]
+  datMix2          <- dat[dat$SampledMix2==1,]
   
-  cutpointsRan=cbind(datRan$IntCutoff1, datRan$IntCutoff2)  ## just need these numbers for the function, not used
-  SampProbRan=matrix(1, ncol=3, nrow=length(datRan[,1])) 
-  w.functionRan=datRan$Int.w                                ## just need these numbers for the function, not used
+  cutpointsRan     <- cbind(datRan$IntCutoff1, datRan$IntCutoff2)  ## just need these numbers for the function, not used
+  SampProbRan      <- matrix(1, ncol=3, nrow=length(datRan[,1])) 
+  w.functionRan    <- datRan$Int.w                                ## just need these numbers for the function, not used
   
-  cutpointsInt=cbind(datInt$IntCutoff1, datInt$IntCutoff2)
-  SampProbInt=cbind(datInt$IntProbLow, datInt$IntProbMid, datInt$IntProbHigh)  
-  w.functionInt=datInt$Int.w
+  cutpointsInt     <- cbind(datInt$IntCutoff1, datInt$IntCutoff2)
+  SampProbInt      <- cbind(datInt$IntProbLow, datInt$IntProbMid, datInt$IntProbHigh)  
+  w.functionInt    <- datInt$Int.w
   
-  cutpointsSlp=cbind(datSlp$SlpCutoff1, datSlp$SlpCutoff2)
-  SampProbSlp=cbind(datSlp$SlpProbLow, datSlp$SlpProbMid, datSlp$SlpProbHigh)  
-  w.functionSlp=datSlp$Slp.w
+  cutpointsSlp     <- cbind(datSlp$SlpCutoff1, datSlp$SlpCutoff2)
+  SampProbSlp      <- cbind(datSlp$SlpProbLow, datSlp$SlpProbMid, datSlp$SlpProbHigh)  
+  w.functionSlp    <- datSlp$Slp.w
   
-  cutpointsMix1=cbind(datMix1$Mix1Cutoff1, datMix1$Mix1Cutoff2)
-  SampProbMix1=cbind(datMix1$Mix1ProbLow, datMix1$Mix1ProbMid, datMix1$Mix1ProbHigh)  
-  w.functionMix1=datMix1$Mix1.w
+  cutpointsMix1    <- cbind(datMix1$Mix1Cutoff1, datMix1$Mix1Cutoff2)
+  SampProbMix1     <- cbind(datMix1$Mix1ProbLow, datMix1$Mix1ProbMid, datMix1$Mix1ProbHigh)  
+  w.functionMix1   <- datMix1$Mix1.w
   
-  cutpointsMix2=cbind(datMix2$Mix2Cutoff1, datMix2$Mix2Cutoff2)
-  SampProbMix2=cbind(datMix2$Mix2ProbLow, datMix2$Mix2ProbMid, datMix2$Mix2ProbHigh)  
-  w.functionMix2=datMix2$Mix2.w
+  cutpointsMix2    <- cbind(datMix2$Mix2Cutoff1, datMix2$Mix2Cutoff2)
+  SampProbMix2     <- cbind(datMix2$Mix2ProbLow, datMix2$Mix2ProbMid, datMix2$Mix2ProbHigh)  
+  w.functionMix2   <- datMix2$Mix2.w
   
   ## Datasets for unsampled subjects
-  datNotRan  <- dat[dat$SampledRan==0,]
-  datNotInt  <- dat[dat$SampledInt==0,]
-  datNotSlp  <- dat[dat$SampledSlp==0,]
-  datNotMix1 <- dat[dat$SampledMix1==0,]
-  datNotMix2 <- dat[dat$SampledMix2==0,]
+  datNotRan        <- dat[dat$SampledRan==0,]
+  datNotInt        <- dat[dat$SampledInt==0,]
+  datNotSlp        <- dat[dat$SampledSlp==0,]
+  datNotMix1       <- dat[dat$SampledMix1==0,]
+  datNotMix2       <- dat[dat$SampledMix2==0,]
   
-  cutpointsNotRan=cbind(datNotRan$IntCutoff1, datNotRan$IntCutoff2)  ## just need these numbers for the function, not used
-  SampProbNotRan=matrix(1, ncol=3, nrow=length(datNotRan[,1])) 
-  w.functionNotRan=datNotRan$Int.w                                ## just need these numbers for the function, not used
+  cutpointsNotRan  <- cbind(datNotRan$IntCutoff1, datNotRan$IntCutoff2)  ## just need these numbers for the function, not used
+  SampProbNotRan   <- matrix(1, ncol=3, nrow=length(datNotRan[,1])) 
+  w.functionNotRan <- datNotRan$Int.w                                ## just need these numbers for the function, not used
   
-  cutpointsNotInt=cbind(datNotInt$IntCutoff1, datNotInt$IntCutoff2)
-  SampProbNotInt=cbind(datNotInt$IntProbLow, datNotInt$IntProbMid, datNotInt$IntProbHigh)  
-  w.functionNotInt=datNotInt$Int.w
+  cutpointsNotInt  <- cbind(datNotInt$IntCutoff1, datNotInt$IntCutoff2)
+  SampProbNotInt   <- cbind(datNotInt$IntProbLow, datNotInt$IntProbMid, datNotInt$IntProbHigh)  
+  w.functionNotInt <- datNotInt$Int.w
   
-  cutpointsNotSlp=cbind(datNotSlp$SlpCutoff1, datNotSlp$SlpCutoff2)
-  SampProbNotSlp=cbind(datNotSlp$SlpProbLow, datNotSlp$SlpProbMid, datNotSlp$SlpProbHigh)  
-  w.functionNotSlp=datNotSlp$Slp.w
+  cutpointsNotSlp  <- cbind(datNotSlp$SlpCutoff1, datNotSlp$SlpCutoff2)
+  SampProbNotSlp   <- cbind(datNotSlp$SlpProbLow, datNotSlp$SlpProbMid, datNotSlp$SlpProbHigh)  
+  w.functionNotSlp <- datNotSlp$Slp.w
   
-  cutpointsNotMix1=cbind(datNotMix1$Mix1Cutoff1, datNotMix1$Mix1Cutoff2)
-  SampProbNotMix1=cbind(datNotMix1$Mix1ProbLow, datNotMix1$Mix1ProbMid, datNotMix1$Mix1ProbHigh)  
-  w.functionNotMix1=datNotMix1$Mix1.w
+  cutpointsNotMix1 <- cbind(datNotMix1$Mix1Cutoff1, datNotMix1$Mix1Cutoff2)
+  SampProbNotMix1  <- cbind(datNotMix1$Mix1ProbLow, datNotMix1$Mix1ProbMid, datNotMix1$Mix1ProbHigh)  
+  w.functionNotMix1<- datNotMix1$Mix1.w
   
-  cutpointsNotMix2=cbind(datNotMix2$Mix2Cutoff1, datNotMix2$Mix2Cutoff2)
-  SampProbNotMix2=cbind(datNotMix2$Mix2ProbLow, datNotMix2$Mix2ProbMid, datNotMix2$Mix2ProbHigh)  
-  w.functionNotMix2=datNotMix2$Mix2.w
+  cutpointsNotMix2 <- cbind(datNotMix2$Mix2Cutoff1, datNotMix2$Mix2Cutoff2)
+  SampProbNotMix2  <- cbind(datNotMix2$Mix2ProbLow, datNotMix2$Mix2ProbMid, datNotMix2$Mix2ProbHigh)  
+  w.functionNotMix2<- datNotMix2$Mix2.w
     
     ###########################################################################
    ##
