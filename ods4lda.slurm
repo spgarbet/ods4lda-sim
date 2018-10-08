@@ -12,8 +12,10 @@
 #SBATCH --constrain=haswell
 
 module purge
-module load Intel/2016.3.210-GCC-5.4.0-2.26
-module load IntelMPI/5.1.3.181
-module load R/3.4.0-X11-20160819
+module load GCC/6.4.0-2.28
+module load OpenMPI/2.1.1
+module load Intel/2017.4.196
+module load IntelMPI/2017.3.196
+module load R/3.4.3
 
 Rscript --no-save sim-accre.R ${SLURM_ARRAY_TASK_ID}
