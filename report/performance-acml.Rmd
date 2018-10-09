@@ -25,6 +25,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 library(tangram)
 library(Hmisc)
+library(purrr)
 ```
 
 ```{r functions, include=FALSE, cache=TRUE}
@@ -61,43 +62,70 @@ results <- cleanup.import(results,
 
 In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
 
-The code being tested is available in the git commit hash `475f50820a9e59b242510edae00f605b524d38a5`.
+The code being tested is available in the git commit hash `d14bac64a8f134ad1d50092f226a8cfab4b01320`.
 
 ### Method
-2000 individuals were simulated using 4 mixed effect models,
+2000 individuals were simulated using 8 mixed effect models,
 
+```
+N           <- 2000
+prev.grp    <- 0.3
+n.imp       <- 50
+p.central   <- 0.8
 
+conf.param.sim       <- rbind( c(-0.25, 0.5),
+                               c(-0.25, 0.5),
+                               c(-0.25, 0.5),
+                               c(-0.25, 0.5),
+                               c(-0.25, 0.5),
+                               c(-.75, 1.5),
+                               c(-0.25, 0.5),
+                               c(-0.25, 0.5))
+ni.sim               <- rbind(c(4, 6), 
+                              c(4, 6), 
+                              c(4, 6), 
+                              c(4, 6),
+                              c(4, 6), 
+                              c(4, 6), 
+                              c(4, 6), 
+                              c(4, 6))
 inits.sim            <- rbind(c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -8, -.5, log(9),log(1.25),0,log(3.5)),
                               c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(1.5),log(0.5),0,log(3.5)))
+                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)))
 NsPerStratumUniv.sim <- matrix( c(150,100,150,
                                   150,100,150,
                                   150,100,150,
+                                  150,100,150,
+                                  150,100,150,
+                                  150,100,150,
+                                  175, 50,175,
                                   150,100,150), ncol=3, byrow=TRUE)
-NsRand.sim           <- c(400,400,400,400)
+```
 
-$$y_{ij} = 75 - 1 t_{ij} - \frac{1}{2} g_i + R_k c_i -\frac{1}{2} t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
+$$y_{ij} = 75 - 1 t_{ij} - \frac{1}{2} g_i  -2 c_i -\frac{1}{2} t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
 $$\begin{bmatrix} b_{0i} \\ b_{1i} \\ \end{bmatrix} \sim \mathcal{N}\left(
   \begin{bmatrix} 0\\0\\ \end{bmatrix},
   \begin{bmatrix} S_k & 0 \\ 0 & 1.5625 \\ \end{bmatrix} \right)$$
 
 $$ \epsilon_{ij} \sim \mathcal{N}(0, 12.25)$$
-where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the presence or absence of a confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.25 probability.
+where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the presence or absence of a confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.3 probability.
 
-The 4, $k=[1,4]$, different models are defined by the parameters:
+The 8, $k=[1,8]$, different models are defined by the parameters:
 
-$$ R_k = {-2, -8, -2, -2} $$
-
-$$ S_k = {81, 81, 81, 2.25}$$
+$$ S_k = {81, 81, 81, 81, 81, 81, 81, 81}$$
 
 This was used to create between 4 to 6 observations at equally spaced time points for each individual.
 
-During each of the 2000 runs approximately 400 individuals were sampled using a Bernoulli strategy to target 150 in the lower and upper 10% of targetted stratum (intercept, slope or mixture) with 100 individuals in the middle 80% of stratum. 
+During each of the 2000 runs approximately 400 individuals were sampled using a Bernoulli strategy for stratum. 
 
 From these runs, we examine the 95\% coverage intervals, the observed bias of estimation and compare the variance of the estimates to the average of the variances estimated by the model using both methods on the same subsampled data sets, as well as examine the accuracy and precision.
 
-The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and mixture crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (75 replicates) and indirect multiple imputation exluding one duplicate method for random sampling (wl).
+The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and mixture1 and mixture2 crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (50 replicates) and Two Phase exluding one duplicate method for random sampling (wl).
 
 ## Results
 
@@ -144,13 +172,14 @@ est.bias      <- function(column, selector)
 bias_table <- function(m)
 {
   html5(tangram(diff.int + diff.time + diff.grp + diff.conf + diff.tg ~ Scenario*Sampling,
-         data=subset(results, Method==m), transforms = cell_func, fun=est.bias, id=paste0(m, "_bias"),                         caption=paste(m, "Estimator Bias"), style="nejm",
+         data=subset(results, Method==m), transforms = cell_func, fun=est.bias, id=paste0(m, "_bias"),
+        caption=paste(m, "Estimator Bias"), style="nejm",
          footnote="Values in Pink have p < 0.001"))
 }
 
 all_bias_table <- function()
 {
-   all <- paste0(sapply(c("ACML", "MI"), function(m) bias_table(m)), collapse='<br/>')
+   all <- paste0(sapply(c("ACML", "MI", "TwoPhase"), function(m) bias_table(m)), collapse='<br/>')
    class(all) <- c("html", "character")
    all
 }
@@ -189,7 +218,7 @@ var.bias_table <- function(m)
 
 all_var.bias_table <- function()
 {
-   all <- paste0(sapply(c("ACML", "MI"), function(m) var.bias_table(m)), collapse='<br/>')
+   all <- paste0(sapply(c("ACML", "MI", "TwoPhase"), function(m) var.bias_table(m)), collapse='<br/>')
    class(all) <- c("html", "character")
    all
 }
@@ -298,13 +327,13 @@ all_cover_table()
 
 ### Efficiency
 
-```{r, results='asis', echo=FALSE}
+```{r efficiency, echo=FALSE}
 
 ref <- subset(results, Sampling=="Random")
 
 efficiency <- function(table, column, row, ref, scenario, ...)
 {
-  ran      <- mean(ref[,row$string()])
+  ran        <- mean(ref[,row$string()])
   
   datac      <- as.categorical(column$data)
   categories <- levels(datac)
@@ -331,29 +360,39 @@ efficiency <- function(table, column, row, ref, scenario, ...)
 eff.inner <- function(m, sc)
 {
   tangram(var.int+var.time+var.grp+var.conf+var.tg ~ Sampling,
-          data=subset(results, Method==m & Scenario==sc),
-          ref=subset(ref,      Method=="ACML" & Scenario==sc),
+          data=subset(results, Method==m      & Scenario==sc),
+          ref =subset(ref,     Method=="ACML" & Scenario==sc),
           scenario=sc,
           transforms=efficiency, id="tmp")
 }
 eff <- function(m)
 {
-  tbl <- rbind(rbind(rbind(eff.inner(m, 1),eff.inner(m, 2)),eff.inner(m, 3)), eff.inner(m, 4))
-  html5(tbl, id=paste0(m,"_eff"), caption=paste0("Efficiency ",m), style="nejm")
+  tbl <- purrr::reduce(lapply(1:8, function(i) eff.inner(m, i)), rbind)
+    
+  attr(tbl, "caption") <- paste0("Efficiency ", m)
+  attr(tbl, "style")   <- "nejm"
+
+  tbl
 }
 
 ```
 
 #### ACML 
 
-```{r, results='asis', echo=FALSE}
-eff("ACML")
+```{r eff_acml, results='asis', echo=FALSE}
+html5(eff("ACML"))
 ```
 
 #### MI
 
-```{r, results='asis', echo=FALSE}
-eff("MI")
+```{r eff_mi, results='asis', echo=FALSE}
+html5(eff("MI"))
+```
+
+#### Two Phase
+
+```{r eff_twophase, results='asis', echo=FALSE}
+html5(eff("TwoPhase"))
 ```
 
 Thus concludes this round of simulation.
