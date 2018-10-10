@@ -48,14 +48,15 @@ results <- load.results(verbose=TRUE)
 
 n <- length(unique(results$Scenario))
 
-
-results <- cleanup.import(results,
+results <- cleanup.import(
+  results,
   labels= c("Job", "Scenario", "Sampling", "Method", 
-            rep(c("Intercept", "Time", "Group", "Confounder",
-                  "Interaction"), times=4
-               )
-           )
+            rep(c("Intercept", "Time", "Group", "Confounder", "Interaction"), times=4)
+            )
 )
+
+results$Sampling <- factor(c("Random", "Intercept", "Slope", "Mix1", "Mix2"),
+                           levels=c("Random", "Intercept", "Slope", "Mix1", "Mix2"))
 ```
 
 ## Purpose
