@@ -1,4 +1,4 @@
-two_phase <- function(sampled, notsampled)
+two_phase <- function(sampled, notsampled, hn_scale)
 {
   interest     <- c("id", "time", "grp", "conf", "y")
   x            <- sampled[, interest]
@@ -20,7 +20,7 @@ two_phase <- function(sampled, notsampled)
   x            <- cbind(x, as.data.frame(simBspline_Z[expand,]))
   
   fit <- smle_lmm(ID="id", Y="y", Time="time", X="grp", Z="conf",
-                  Bspline_Z = colnames(simBspline_Z), data = x)
+                  Bspline_Z = colnames(simBspline_Z), data = x, hn_scale=hn_scale)
   
   # Reformat results for use in summarization code
   reorder              <- c(1,4,2,3,5) # Reorder to ordering of other fits

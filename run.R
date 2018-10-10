@@ -87,13 +87,13 @@ simulation <- function(run, count, save.raw=FALSE)
   NsRand           <- sum(NsPerStratumUniv)
   
   progress("Generate cutoffs using a population of 10000")
-  dat.tmp          <- GenerateX(N=25000, n=ni[2], prev.grp=prev.grp, c.parm=conf.param)
+  dat.tmp          <- GenerateX(N=25000, n=ni[2], prev.grp=prev.grp[count], c.parm=conf.param)
   dat.tmp$y        <- GenerateY(X=cbind(1, dat.tmp$time, dat.tmp$grp, dat.tmp$conf, dat.tmp$time*dat.tmp$grp), Z=cbind(1, dat.tmp$time), id=dat.tmp$id,
                                 beta=inits[1:5], sig.b0 = exp(inits[6]), sig.b1 =exp(inits[7]), rho = inits[8], sig.e = exp(inits[9]), RanefDist="Gaussian", ErrorDist="Gaussian")
-  cutoffs          <- est.cutoffs(Y=dat.tmp$y, time=dat.tmp$time, id=dat.tmp$id, PropInCentralRegion=p.central)
+  cutoffs          <- est.cutoffs(Y=dat.tmp$y, time=dat.tmp$time, id=dat.tmp$id, PropInCentralRegion=p.central[count])
 
   progress("Generate random data from truth")
-  dat              <- GenerateX(N=N, n=ni[2], prev.grp=prev.grp, c.parm=conf.param)
+  dat              <- GenerateX(N=N, n=ni[2], prev.grp=prev.grp[count], c.parm=conf.param)
   dat$y            <- GenerateY(X=cbind(1, dat$time, dat$grp, dat$conf, dat$time*dat$grp), Z=cbind(1, dat$time), id=dat$id,
                                 beta=inits[1:5], sig.b0 = exp(inits[6]), sig.b1 =exp(inits[7]), rho = inits[8], sig.e = exp(inits[9]), RanefDist="Gaussian", ErrorDist="Gaussian")
   dat              <- dat[order(dat$id, dat$time),]
@@ -291,19 +291,19 @@ simulation <- function(run, count, save.raw=FALSE)
   progress("Two Phase Reg")
   
   progress("... Random")
-  Fit.ran.2p <- two_phase(datRan, datNotRan)
+  Fit.ran.2p <- two_phase(datRan, datNotRan, hn_scale[count])
 
   progress("... Intercept")
-  Fit.int.2p <- two_phase(datInt, datNotInt)
+  Fit.int.2p <- two_phase(datInt, datNotInt, hn_scale[count])
 
   progress("... Slope")
-  Fit.slp.2p <- two_phase(datSlp, datNotSlp)
+  Fit.slp.2p <- two_phase(datSlp, datNotSlp, hn_scale[count])
 
   progress("... Mixture 1")
-  Fit.mix1.2p <- two_phase(datMix1, datNotMix1)
+  Fit.mix1.2p <- two_phase(datMix1, datNotMix1, hn_scale[count])
   
   progress("... Mixture 2")
-  Fit.mix2.2p <- two_phase(datMix2, datNotMix2)
+  Fit.mix2.2p <- two_phase(datMix2, datNotMix2, hn_scale[count])
 
     ###########################################################################
    ##
