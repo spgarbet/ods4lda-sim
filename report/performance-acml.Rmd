@@ -63,17 +63,34 @@ results$Sampling <- factor(c("Random", "Intercept", "Slope", "Mix1", "Mix2"),
 
 In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
 
-The code being tested is available in the git commit hash `d14bac64a8f134ad1d50092f226a8cfab4b01320`.
+The code being tested is available in the git commit hash `a7215f0d908230f050cf06f40d258425ff437a2f`.
 
 ### Method
 2000 individuals were simulated using 8 mixed effect models,
 
 ```
+   #############################################################################
+ ##
+## Known True Parameters
 N           <- 2000
-prev.grp    <- 0.3
+prev.grp    <- c(0.3,
+                 0.3,
+                 0.3,
+                 0.3,
+                 0.1,
+                 0.3,
+                 0.3,
+                 0.3)
+   
 n.imp       <- 50
-p.central   <- 0.8
-
+p.central   <- c(0.8,
+                 0.8,
+                 0.8,
+                 0.8,
+                 0.8,
+                 0.8,
+                 0.8,
+                 0.6)
 conf.param.sim       <- rbind( c(-0.25, 0.5),
                                c(-0.25, 0.5),
                                c(-0.25, 0.5),
@@ -91,9 +108,9 @@ ni.sim               <- rbind(c(4, 6),
                               c(4, 6), 
                               c(4, 6))
 inits.sim            <- rbind(c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -6, -.5, log(9),log(1.25),0,log(3.5)),
+                              c(75, -1, -.5, -2, -.5, log(9),log(0.5),0,log(3.5)),
+                              c(75, -2.5, -.5, -2, -1.25, log(9),log(1.25),0,log(3.5)),
                               c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
                               c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
                               c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
@@ -106,19 +123,26 @@ NsPerStratumUniv.sim <- matrix( c(150,100,150,
                                   150,100,150,
                                   175, 50,175,
                                   150,100,150), ncol=3, byrow=TRUE)
+# Control TwoPhase RanTao
+hn_scale=c(1.5, 2, 0.5, 0.1, 1.5, 2, 0.5, 0.1)
 ```
 
-$$y_{ij} = 75 - 1 t_{ij} - \frac{1}{2} g_i  -2 c_i -\frac{1}{2} t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \epsilon_{ij}$$
-$$\begin{bmatrix} b_{0i} \\ b_{1i} \\ \end{bmatrix} \sim \mathcal{N}\left(
-  \begin{bmatrix} 0\\0\\ \end{bmatrix},
-  \begin{bmatrix} S_k & 0 \\ 0 & 1.5625 \\ \end{bmatrix} \right)$$
+```{r, results='asis'}
+for(i in 1:length(prev.grp))
+{
+  cat("### Model Run",i,"\n\n")
+  parm <- inits.sim[i,]
+  cat("$$y_{ij} = ",parm[1], parm[2]," t_{ij} ",parm[3]," g_i ",parm[4]," c_i ",parm[5]," t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \\epsilon_{ij}$$\n", sep='')
+  cat("$$\\begin{bmatrix} b_{0i} \\\\ b_{1i} \\\\ \\end{bmatrix} \\sim \\mathcal{N}\\left(\\begin{bmatrix} 0\\\\0\\\\ \\end{bmatrix},\\begin{bmatrix} ", exp(parm[6])^2,"& 0 \\\\ 0 & ", round(exp(parm[7])^2,4), " \\\\ \\end{bmatrix} \\right)$$\n")
+  cat("$$ \\epsilon_{ij} \\sim \\mathcal{N}(0, ", round(exp(parm[9])^2,4), ")$$")
+  cat("\n\n")
+}
 
-$$ \epsilon_{ij} \sim \mathcal{N}(0, 12.25)$$
+```
+
+
+
 where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the presence or absence of a confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.3 probability.
-
-The 8, $k=[1,8]$, different models are defined by the parameters:
-
-$$ S_k = {81, 81, 81, 81, 81, 81, 81, 81}$$
 
 This was used to create between 4 to 6 observations at equally spaced time points for each individual.
 
