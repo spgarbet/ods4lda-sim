@@ -63,68 +63,13 @@ results$Sampling <- factor(c("Random", "Intercept", "Slope", "Mix1", "Mix2"),
 
 In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
 
-The code being tested is available in the git commit hash `a7215f0d908230f050cf06f40d258425ff437a2f`.
+The code being tested is available in the git commit hash `3d69d4925188ff9eeb2ea7568473f7db6c46ecc1`.
 
 ### Method
-2000 individuals were simulated using 8 mixed effect models,
+`r N` individuals were simulated using `r length(prev.grp)` mixed effect models,
 
 ```
-   #############################################################################
- ##
-## Known True Parameters
-N           <- 2000
-prev.grp    <- c(0.3,
-                 0.3,
-                 0.3,
-                 0.3,
-                 0.1,
-                 0.3,
-                 0.3,
-                 0.3)
-   
-n.imp       <- 50
-p.central   <- c(0.8,
-                 0.8,
-                 0.8,
-                 0.8,
-                 0.8,
-                 0.8,
-                 0.8,
-                 0.6)
-conf.param.sim       <- rbind( c(-0.25, 0.5),
-                               c(-0.25, 0.5),
-                               c(-0.25, 0.5),
-                               c(-0.25, 0.5),
-                               c(-0.25, 0.5),
-                               c(-.75, 1.5),
-                               c(-0.25, 0.5),
-                               c(-0.25, 0.5))
-ni.sim               <- rbind(c(4, 6), 
-                              c(4, 6), 
-                              c(4, 6), 
-                              c(4, 6),
-                              c(4, 6), 
-                              c(4, 6), 
-                              c(4, 6), 
-                              c(4, 6))
-inits.sim            <- rbind(c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -6, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(9),log(0.5),0,log(3.5)),
-                              c(75, -2.5, -.5, -2, -1.25, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)),
-                              c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5)))
-NsPerStratumUniv.sim <- matrix( c(150,100,150,
-                                  150,100,150,
-                                  150,100,150,
-                                  150,100,150,
-                                  150,100,150,
-                                  150,100,150,
-                                  175, 50,175,
-                                  150,100,150), ncol=3, byrow=TRUE)
-# Control TwoPhase RanTao
-hn_scale=c(1.5, 2, 0.5, 0.1, 1.5, 2, 0.5, 0.1)
+hn_scale=c(1.5, 2, 0.5, 0.1)
 ```
 
 ```{r, results='asis'}
@@ -150,7 +95,7 @@ During each of the 2000 runs approximately 400 individuals were sampled using a 
 
 From these runs, we examine the 95\% coverage intervals, the observed bias of estimation and compare the variance of the estimates to the average of the variances estimated by the model using both methods on the same subsampled data sets, as well as examine the accuracy and precision.
 
-The fitting is done by 15 different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and mixture1 and mixture2 crossed with 4 fitting methods: ACML, weighted likelihood, direct multiple imputation (50 replicates) and Two Phase exluding one duplicate method for random sampling (wl).
+The fitting is done by a variety of different methods. Each of the combinations of 4 sampling methods: random, intercept, slope and mixture1 and mixture2 crossed with fitting methods: ACML, weighted likelihood, direct multiple imputation (`r n.imp` replicates) and Two Phase exluding one duplicate method for random sampling (wl).
 
 ## Results
 
@@ -167,7 +112,7 @@ cell_func <- function(table, row, column, fun=NULL, ...)
   if(is.null(colname)) colname <- column$string()
   table <- col_header(table, colname)
   major <- unique(row$left$data)
-  minor <- unique(row$right$data)
+  minor <- levels(row$right$data)
 
   for(m in major)
   {
@@ -221,9 +166,9 @@ var.bias <- function(column, selector)
   estimate <- mean(column$right$data[selector]) # mean of estimated variances
 
   percent  <- 100*(estimate-truth)/truth
-  
-  cls   <- if(abs(percent) > 10) "failure" else NULL
-  cell(render_f(percent, 1), class=cls)
+  cls      <- if(is.na(percent) || abs(percent) > 10) "failure" else NULL
+  f_per    <- if(is.na(percent)) "-" else render_f(percent, 1)
+  cell(f_per, class=cls)
 }
 
 var.bias_table <- function(m)
@@ -392,7 +337,7 @@ eff.inner <- function(m, sc)
 }
 eff <- function(m)
 {
-  tbl <- purrr::reduce(lapply(1:8, function(i) eff.inner(m, i)), rbind)
+  tbl <- purrr::reduce(lapply(1:length(prev.grp), function(i) eff.inner(m, i)), rbind)
     
   attr(tbl, "caption") <- paste0("Efficiency ", m)
   attr(tbl, "style")   <- "nejm"
