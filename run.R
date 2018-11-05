@@ -272,19 +272,24 @@ simulation <- function(run, count, save.raw=FALSE)
   
   progress("... Random")
   Fit.ran.mi <- IndirectImputation(acml.fit=Fit.ran, datSampled=datRan, datNotSampled=datNotRan, 
-                                   cutpointsNotSampled=cutpointsNotRan, w.functionNotSampled=w.functionNotRan, SampProbNotSampled=SampProbNotRan, n.imp=n.imp)
+                                   cutpointsNotSampled=cutpointsNotRan, w.functionNotSampled=w.functionNotRan,
+                                   SampProbNotSampled=SampProbNotRan,   n.imp=n.imp)
   progress("... Intercept")
   Fit.int.mi <- IndirectImputation(acml.fit=Fit.int, datSampled=datInt, datNotSampled=datNotInt, 
-                                   cutpointsNotSampled=cutpointsNotInt, w.functionNotSampled=w.functionNotInt, SampProbNotSampled=SampProbNotInt, n.imp=n.imp)
+                                   cutpointsNotSampled=cutpointsNotInt, w.functionNotSampled=w.functionNotInt,
+                                   SampProbNotSampled=SampProbNotInt,   n.imp=n.imp)
   progress("... Slope")
   Fit.slp.mi <- IndirectImputation(acml.fit=Fit.slp, datSampled=datSlp, datNotSampled=datNotSlp, 
-                                   cutpointsNotSampled=cutpointsNotSlp, w.functionNotSampled=w.functionNotSlp, SampProbNotSampled=SampProbNotSlp, n.imp=n.imp)
+                                   cutpointsNotSampled=cutpointsNotSlp, w.functionNotSampled=w.functionNotSlp,
+                                   SampProbNotSampled=SampProbNotSlp,   n.imp=n.imp)
   progress("... Mixture 1")
   Fit.mix1.mi <- IndirectImputation(acml.fit=Fit.mix1, datSampled=datMix1, datNotSampled=datNotMix1, 
-                                    cutpointsNotSampled=cutpointsNotMix1, w.functionNotSampled=w.functionNotMix1, SampProbNotSampled=SampProbNotMix1, n.imp=n.imp) 
+                                    cutpointsNotSampled=cutpointsNotMix1,  w.functionNotSampled=w.functionNotMix1,
+                                    SampProbNotSampled=SampProbNotMix1,    n.imp=n.imp) 
   progress("... Mixture 2")
   Fit.mix2.mi <- IndirectImputation(acml.fit=Fit.mix2, datSampled=datMix2, datNotSampled=datNotMix2, 
-                                   cutpointsNotSampled=cutpointsNotMix2, w.functionNotSampled=w.functionNotMix2, SampProbNotSampled=SampProbNotMix2, n.imp=n.imp) 
+                                    cutpointsNotSampled=cutpointsNotMix2,  w.functionNotSampled=w.functionNotMix2,
+                                    SampProbNotSampled=SampProbNotMix2,    n.imp=n.imp) 
 
     ###########################################################################
    ##

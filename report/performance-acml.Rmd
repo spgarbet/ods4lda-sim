@@ -55,7 +55,7 @@ results <- cleanup.import(
             )
 )
 
-results$Sampling <- factor(c("Random", "Intercept", "Slope", "Mix1", "Mix2"),
+results$Sampling <- factor(results$Sampling,
                            levels=c("Random", "Intercept", "Slope", "Mix1", "Mix2"))
 ```
 
@@ -299,7 +299,7 @@ all_cover_table()
 
 ```{r efficiency, echo=FALSE}
 
-ref <- subset(results, Sampling=="Random")
+ref <- subset(results, Sampling=="Random" & Method=="ACML")
 
 efficiency <- function(table, column, row, ref, scenario, ...)
 {
