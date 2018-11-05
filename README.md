@@ -5,6 +5,7 @@ this approach. With that in mind, the following directory outlines what each
 files purpose is in this project
 
 | Filename                    | Purpose                                   |
+| --------------------------- | ----------------------------------------- |
 | functions.R                 | ACML fitting functions                    |
 | generate-data.R             | Simulate data for a given model           |
 | impute.R                    | Imputation fitting functions              |
