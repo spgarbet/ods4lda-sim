@@ -17,3 +17,20 @@ files purpose is in this project
 | two_phase.R                 | Ran Tao's 2 phase fitting function        |
 | report/performance-acml.Rmd | Generate a summary of results             |
 | report/figure.R             | Generate a summary figure                 |
+
+
+The main loop function `simulation(run, count, save.raw=FALSE)` runs the model
+setting the random seed to the `run` variable and `count` to the indexed parameter
+setup. The `save.raw` flag will save the raw model fits if desired. Output goes 
+into the `output` directory in the form of `output/run-<run>-<count>.RData` and
+if raw was requested `output/raw-<run>-<count>.RData` likewise.
+
+All output to the terminal is controlled by the `progress` function at the top
+of the `run.R` code. This is helpful if one decides to eliminate all output, 
+this function can just be set to do nothing without having to edit all occurances
+of output in the code. This is a good example of functional programming's benefits.
+
+When run on ACCRE the output of each job goes into the `status` directory as
+`status/job<run>.out`. Also the ACCRE SBATCH command controls the run numbers
+and is the most commonly edited line. For example, it's commonly set to execute
+2000 runs from 1-2000.
