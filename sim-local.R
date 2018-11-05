@@ -11,4 +11,4 @@ library(parallel)
 #   sapply(1:8, function(y) simulation(x, y))
 # })
 
-mclapply(1:8, mc.cores=8, function(x) {set.seed(1); simulation(1, x)})
+mclapply(1:4, mc.cores=8, function(x) {set.seed(1); simulation(1, x)})
