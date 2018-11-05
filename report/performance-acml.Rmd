@@ -303,25 +303,26 @@ ref <- subset(results, Sampling=="Random" & Method=="ACML")
 
 efficiency <- function(table, column, row, ref, scenario, ...)
 {
-  ran        <- mean(ref[,row$string()])
+  ran        <- mean(ref[,row$right$string()]) # Comparison
   
   datac      <- as.categorical(column$data)
   categories <- levels(datac)
 
-  # Compute overall N values for each category
-  # length(datac[datac == cat & !is.na(datac)])
-  subN <- lapply(categories, FUN=function(cat)
-    cell_n( sum(column$data == cat, na.rm=TRUE), subcol=cat)
-  )
-  
-  table <- col_header(table, derive_label(row))
-
+  table <- col_header(table, derive_label(row$right))
   table <- row_header(table, scenario)
   table <- add_row(table, "")
   for(i in categories)
   {
     table <- row_header(table, paste0("  ", i))
-    table <- add_row(table, render_f(ran/mean(row$data[datac==i]),3))
+
+    result <- paste0(
+      sapply(unique(row$left$data), function(method) {
+       selector <- datac==i & (row$left$data == method)
+       render_f(ran/mean(row$right$data[selector]),2)
+       }),
+      collapse=", ")
+
+    table <- add_row(table, paste0("(",result,")") )
   }
   
   table
@@ -329,8 +330,8 @@ efficiency <- function(table, column, row, ref, scenario, ...)
 
 eff.inner <- function(m, sc)
 {
-  tangram(var.int+var.time+var.grp+var.conf+var.tg ~ Sampling,
-          data=subset(results, Method==m      & Scenario==sc),
+  tangram(Method*(var.int+var.time+var.grp+var.conf+var.tg) ~ Sampling,
+          data=subset(results, Method %in% m  & Scenario==sc),
           ref =subset(ref,     Method=="ACML" & Scenario==sc),
           scenario=sc,
           transforms=efficiency, id="tmp")
@@ -339,7 +340,7 @@ eff <- function(m)
 {
   tbl <- purrr::reduce(lapply(1:length(prev.grp), function(i) eff.inner(m, i)), rbind)
     
-  attr(tbl, "caption") <- paste0("Efficiency ", m)
+  attr(tbl, "caption") <- paste0("Efficiency (", paste0(m, collapse=", "), ")")
   attr(tbl, "style")   <- "nejm"
 
   tbl
@@ -347,23 +348,11 @@ eff <- function(m)
 
 ```
 
-#### ACML 
-
 ```{r eff_acml, results='asis', echo=FALSE}
-html5(eff("ACML"))
+html5(eff(c("ACML", "MI", "TwoPhase")))
 ```
 
-#### MI
 
-```{r eff_mi, results='asis', echo=FALSE}
-html5(eff("MI"))
-```
-
-#### Two Phase
-
-```{r eff_twophase, results='asis', echo=FALSE}
-html5(eff("TwoPhase"))
-```
 
 Thus concludes this round of simulation.
 
