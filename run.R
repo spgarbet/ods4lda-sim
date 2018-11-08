@@ -77,7 +77,7 @@ vars     <- function(fits)
   #############################################################################
  ##
 ## Main Simulation Loop
-simulation <- function(run, count, save.raw=FALSE)
+simulation <- function(run, count, save.raw=FALSE, save.data=FALSE)
 {
   progress("Generating random data from known parameters")
   conf.param       <- conf.param.sim[count,]
@@ -321,7 +321,15 @@ simulation <- function(run, count, save.raw=FALSE)
     Fit.ran.2p,   Fit.int.2p,   Fit.slp.2p,   Fit.mix1.2p,  Fit.mix2.2p
   )
   
-  if(save.raw) save(fits, file=paste0("output/raw-", run, "-", count, ".RData"))
+  if(save.raw)  save(
+    Fit.ran,      Fit.int,      Fit.slp,      Fit.mix1,     Fit.mix2,
+                  Fit.int.wl,   Fit.slp.wl,   Fit.mix1.wl,  Fit.mix2.wl,
+    Fit.ran.mi,   Fit.int.mi,   Fit.slp.mi,   Fit.mix1.mi,  Fit.mix2.mi,
+    Fit.ran.2p,   Fit.int.2p,   Fit.slp.2p,   Fit.mix1.2p,  Fit.mix2.2p,
+    file=paste0("output/raw-", run, "-", count, ".RData"))
+  
+  if(save.data) save(datRan, datInt, datSlp, datMix1, datMix2,
+    file=paste0("output/data-", run, "-", count, ".RData"))
 
   results <- data.frame(
     Job      = rep(run,   19),
