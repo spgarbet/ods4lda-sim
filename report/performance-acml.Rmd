@@ -56,7 +56,8 @@ results <- cleanup.import(
 )
 
 results$Sampling <- factor(results$Sampling,
-                           levels=c("Random", "Intercept", "Slope", "Mix1", "Mix2"))
+                           levels=c("Random", "Intercept", "Mix1", "Mix2", "Slope"))
+
 ```
 
 ## Purpose
