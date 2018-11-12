@@ -35,7 +35,8 @@ scenarios <- inits.sim
 # Helper function for repeated operation over files.
 load.results <- function(target="../output", verbose=FALSE)
 {
-  files <- paste0(target, "/", dir(target))
+  files <- dir(target)
+  files <- paste0(target, "/", files[grepl("^run", files)])
   
   do.call(rbind, lapply(files, function(f) {
     if(verbose) cat("Loading ", f, "\n")
@@ -70,7 +71,7 @@ The code being tested is available in the git commit hash `3d69d4925188ff9eeb2ea
 `r N` individuals were simulated using `r length(prev.grp)` mixed effect models,
 
 ```
-hn_scale=c(1.5, 2, 0.5, 0.1)
+hn_scale=c(2, 2, 2, 2)
 ```
 
 ```{r, results='asis'}
@@ -88,7 +89,7 @@ for(i in 1:length(prev.grp))
 
 
 
-where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the presence or absence of a confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.3 probability.
+where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.3 probability.
 
 This was used to create between 4 to 6 observations at equally spaced time points for each individual.
 
