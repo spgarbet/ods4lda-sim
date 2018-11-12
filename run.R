@@ -329,6 +329,7 @@ simulation <- function(run, count, save.raw=FALSE, save.data=FALSE)
     file=paste0("output/raw-", run, "-", count, ".RData"))
   
   if(save.data) save(datRan, datInt, datSlp, datMix1, datMix2,
+    datNotRan, datNotInt, datNotSlp, datNotMix1, datNotMix2,
     file=paste0("output/data-", run, "-", count, ".RData"))
 
   results <- data.frame(
