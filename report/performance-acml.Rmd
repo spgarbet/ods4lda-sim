@@ -82,12 +82,18 @@ cat("hn_scale for two phase was set to ")
 cat(paste0(hn_scale, collapse=", "), ".\n", sep='')
 ```
 
+1 -> 1
+4 -> 2
+2 -> 3
+3 -> 5
+5 -> 4
+
 ```{r, results='asis'}
 for(i in 1:n)
 {
   cat("### Model Run",i,"\n\n")
   parm <- inits.sim[i,]
-  cat("$$y_{ij} = ",parm[1], parm[2]," s_i ", parm[3]," s_i t_{ij}", parm[4]," t_{ij} ", parm[5]," c_i + b_{0i} + b_{1i} t_{ij} + \\epsilon_{ij}$$\n", sep='')
+  cat("$$y_{ij} = ",parm[1], parm[3]," s_i ", parm[5]," s_i t_{ij}", parm[2]," t_{ij} ", parm[4]," c_i + b_{0i} + b_{1i} t_{ij} + \\epsilon_{ij}$$\n", sep='')
   cat("$$\\begin{bmatrix} b_{0i} \\\\ b_{1i} \\\\ \\end{bmatrix} \\sim \\mathcal{N}\\left(\\begin{bmatrix} 0\\\\0\\\\ \\end{bmatrix},\\begin{bmatrix} ", exp(parm[6])^2,"& 0 \\\\ 0 & ", round(exp(parm[7])^2,4), " \\\\ \\end{bmatrix} \\right)$$\n")
   cat("$$ \\epsilon_{ij} \\sim \\mathcal{N}(0, ", round(exp(parm[9])^2,4), ")$$")
   cat("\n\n")
