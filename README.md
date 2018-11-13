@@ -6,7 +6,7 @@ files purpose is in this project
 
 | Filename                    | Purpose                                   |
 | --------------------------- | ----------------------------------------- |
-| functions.R                 | ACML fitting functions                    |
+| acml.R                      | ACML fitting functions                    |
 | generate-data.R             | Simulate data for a given model           |
 | impute.R                    | Imputation fitting functions              |
 | missing.sh                  | Script to check for missing runs on ACCRE |
