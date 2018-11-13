@@ -65,17 +65,25 @@ results$Sampling <- factor(results$Sampling,
 
 In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
 
-The code being tested is available in the git commit hash `3d69d4925188ff9eeb2ea7568473f7db6c46ecc1`.
+The code being tested is available in the git commit hash:
+```{r, results='asis'}
+system("git log --pretty=format:'%H' -n 1", intern=TRUE)
+```
 
 ### Method
-`r N` individuals were simulated using `r length(prev.grp)` mixed effect models,
-
+```{r, include=FALSE}
+n <- length(prev.grp)
 ```
-hn_scale=c(2, 2, 2, 2)
+
+`r N` individuals were simulated using `r n` mixed effect models,
+
+```{r, results='asis'}
+cat("hn_scale for two phase was set to ")
+cat(paste0(hn_scale, collapse=", "), ".\n", sep='')
 ```
 
 ```{r, results='asis'}
-for(i in 1:length(prev.grp))
+for(i in 1:n)
 {
   cat("### Model Run",i,"\n\n")
   parm <- inits.sim[i,]
@@ -89,11 +97,11 @@ for(i in 1:length(prev.grp))
 
 
 
-where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the confounder for the $i$th individual. Membership in the $g_i$ group occurs at a 0.3 probability.
+where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the confounder for the $i$th individual. Membership in the $g_i$ group occurs at a `r paste0(prev.grp, collapse=", ")` probability.
 
 This was used to create between 4 to 6 observations at equally spaced time points for each individual.
 
-During each of the 2000 runs approximately 400 individuals were sampled using a Bernoulli strategy for stratum. 
+During each of the `r N` runs approximately `r paste0(rowSums(NsPerStratumUniv.sim), collapse=", ")` individuals were sampled using a Bernoulli strategy for stratum. Cutoffs quantiles for sampling were as follows: `r paste0("[",paste(100*(1-p.central)/2, 100-100*(1-p.central)/2, sep=","),"]", collapse=", ")`
 
 From these runs, we examine the 95\% coverage intervals, the observed bias of estimation and compare the variance of the estimates to the average of the variances estimated by the model using both methods on the same subsampled data sets, as well as examine the accuracy and precision.
 
