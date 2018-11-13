@@ -28,7 +28,7 @@ library(Hmisc)
 library(purrr)
 ```
 
-```{r functions, include=FALSE, cache=TRUE}
+```{r functions, include=FALSE}
 source("../setup.R")
 scenarios <- inits.sim
 
@@ -57,7 +57,7 @@ results <- cleanup.import(
 )
 
 results$Sampling <- factor(results$Sampling,
-                           levels=c("Random", "Intercept", "Mix1", "Mix2", "Slope"))
+                           levels=c("Random", "Intercept", "Mix2", "Mix1", "Slope"))
 
 ```
 
@@ -87,7 +87,7 @@ for(i in 1:n)
 {
   cat("### Model Run",i,"\n\n")
   parm <- inits.sim[i,]
-  cat("$$y_{ij} = ",parm[1], parm[2]," t_{ij} ",parm[3]," g_i ",parm[4]," c_i ",parm[5]," t_{ij} g_i  + b_{0i} + b_{1i} t_{ij} + \\epsilon_{ij}$$\n", sep='')
+  cat("$$y_{ij} = ",parm[1], parm[2]," s_i ", parm[3]," s_i t_{ij}", parm[4]," t_{ij} ", parm[5]," c_i + b_{0i} + b_{1i} t_{ij} + \\epsilon_{ij}$$\n", sep='')
   cat("$$\\begin{bmatrix} b_{0i} \\\\ b_{1i} \\\\ \\end{bmatrix} \\sim \\mathcal{N}\\left(\\begin{bmatrix} 0\\\\0\\\\ \\end{bmatrix},\\begin{bmatrix} ", exp(parm[6])^2,"& 0 \\\\ 0 & ", round(exp(parm[7])^2,4), " \\\\ \\end{bmatrix} \\right)$$\n")
   cat("$$ \\epsilon_{ij} \\sim \\mathcal{N}(0, ", round(exp(parm[9])^2,4), ")$$")
   cat("\n\n")
@@ -311,14 +311,14 @@ all_cover_table()
 
 ref <- subset(results, Sampling=="Random" & Method=="ACML")
 
-efficiency <- function(table, column, row, ref, scenario, ...)
+efficiency <- function(table, row, column, ref, scenario, ...)
 {
-  ran        <- mean(ref[,row$right$string()]) # Comparison
+  ran        <- mean(ref[,column$right$string()]) # Comparison
   
-  datac      <- as.categorical(column$data)
-  categories <- levels(datac)
+  datar      <- as.categorical(row$data)
+  categories <- levels(datar)
 
-  table <- col_header(table, derive_label(row$right))
+  table <- col_header(table, derive_label(column$right))
   table <- row_header(table, scenario)
   table <- add_row(table, "")
   for(i in categories)
@@ -326,9 +326,9 @@ efficiency <- function(table, column, row, ref, scenario, ...)
     table <- row_header(table, paste0("  ", i))
 
     result <- paste0(
-      sapply(unique(row$left$data), function(method) {
-       selector <- datac==i & (row$left$data == method)
-       render_f(ran/mean(row$right$data[selector]),2)
+      sapply(unique(column$left$data), function(method) {
+       selector <- datar==i & (column$left$data == method)
+       render_f(ran/mean(column$right$data[selector]),2)
        }),
       collapse=", ")
 
