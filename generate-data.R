@@ -41,6 +41,8 @@ GenerateX <- function(N, n, prev.grp, c.parm)
     data.frame(id=id, time=time, grp=grp, conf=conf)
 }
 
+# Order of beta is 
+# B_0, B_t, B_g, B_c, B_gt, log(s_b0), log(s_b1), F_z(rho), log(s_e)
 GenerateY <- function(X, Z, id, beta, sig.b0 = 0.25, sig.b1 = 0.25, rho = 0, sig.e = 0.5, RanefDist, ErrorDist){
     lp <- X %*% beta
     cov.mat  <- matrix(c(sig.b0^2, rho*sig.b0*sig.b1, rho*sig.b0*sig.b1, sig.b1^2),2,2)

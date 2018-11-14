@@ -57,7 +57,7 @@ results <- cleanup.import(
 )
 
 results$Sampling <- factor(results$Sampling,
-                           levels=c("Random", "Intercept", "Mix2", "Mix1", "Slope"))
+                           levels=c("Random", "Slope", "Mix1", "Mix2", "Intercept"))
 
 ```
 
@@ -65,10 +65,7 @@ results$Sampling <- factor(results$Sampling,
 
 In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
 
-The code being tested is available in the git commit hash:
-```{r, results='asis'}
-system("git log --pretty=format:'%H' -n 1", intern=TRUE)
-```
+The code being tested is available in the git commit hash: `r system("git log --pretty=format:'%H' -n 1", intern=TRUE)`
 
 ### Method
 ```{r, include=FALSE}
@@ -81,12 +78,6 @@ n <- length(prev.grp)
 cat("hn_scale for two phase was set to ")
 cat(paste0(hn_scale, collapse=", "), ".\n", sep='')
 ```
-
-1 -> 1
-4 -> 2
-2 -> 3
-3 -> 5
-5 -> 4
 
 ```{r, results='asis'}
 for(i in 1:n)
