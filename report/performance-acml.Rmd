@@ -98,7 +98,7 @@ where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is
 
 This was used to create between 4 to 6 observations at equally spaced time points for each individual.
 
-During each of the `r N` runs approximately `r paste0(rowSums(NsPerStratumUniv.sim), collapse=", ")` individuals were sampled using a Bernoulli strategy for stratum. Cutoffs quantiles for sampling were as follows: `r paste0("[",paste(100*(1-p.central)/2, 100-100*(1-p.central)/2, sep=","),"]", collapse=", ")`
+During each of the `r N` runs approximately `r paste0(rowSums(NsPerStratumUniv.sim), collapse=", ")` individuals were sampled using a Bernoulli strategy for stratum. `r paste0("(", paste0(sapply(1:n, function(i) paste0(NsPerStratumUniv.sim[i,], collapse=", ")), collapse="), ("), ")")` specifically. Cutoffs quantiles for sampling were as follows: `r paste0("[",paste(100*(1-p.central)/2, 100-100*(1-p.central)/2, sep=","),"]", collapse=", ")`
 
 From these runs, we examine the 95\% coverage intervals, the observed bias of estimation and compare the variance of the estimates to the average of the variances estimated by the model using both methods on the same subsampled data sets, as well as examine the accuracy and precision.
 
@@ -357,6 +357,7 @@ eff <- function(m)
 
 ```{r eff_acml, results='asis', echo=FALSE}
 html5(eff(c("ACML", "MI", "TwoPhase")))
+#html5(eff(c("ACML", "WL", "MI")))
 ```
 
 
