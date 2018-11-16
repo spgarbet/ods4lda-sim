@@ -19,6 +19,9 @@ ni.sim               <- rbind(c(4, 6),
                               c(4, 6), 
                               c(4, 6), 
                               c(4, 6))
+
+# Ordering
+# B_0, B_t, B_g, B_c, B_gt, log(s_b0), log(s_b1), F_z(rho), log(s_e)
 inits.sim            <- rbind(c(75, -1, -0.5, -2, -0.5, log(9),log(1.25),0,log(3.5)),
                               c(75, -1, -0.5, -6, -0.5, log(9),log(1.25),0,log(3.5)),
                               c(75, -1, -0.5, -2, -0.5, log(9),log(1.25),0,log(3.5)),
