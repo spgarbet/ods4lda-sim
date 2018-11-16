@@ -5,15 +5,13 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=06:00:00
+#SBATCH --time=8:00:00
 #SBATCH --mem=4G
 #SBATCH --output=status/job%a.out
 #SBATCH --array=1-2000
 #SBATCH --constrain=haswell
 
 module purge
-module load GCC/6.4.0-2.28
-module load OpenMPI/2.1.1
 module load Intel/2017.4.196
 module load IntelMPI/2017.3.196
 module load R/3.4.3
