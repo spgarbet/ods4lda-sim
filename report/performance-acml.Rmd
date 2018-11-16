@@ -292,9 +292,11 @@ cover_table <- function(sample, subbatch)
 
 all_cover_table <- function()
 {
-   all <- paste0(sapply(c("Random", "Intercept", "Slope", "Mix1", "Mix2"), function(m) {
-     paste0(sapply(1:n, function(x) cover_table(m, x)), collapse='<br/>')
-   }), collapse='<br/>')
+   all <- paste0(sapply(1:n,
+                        function(x) sapply(levels(results$Sampling),
+                                           function(m) paste0(cover_table(m, x), collapse='<br/>'))
+                       ),
+                 collapse='<br/>')
    class(all) <- c("html", "character")
    all
 }
