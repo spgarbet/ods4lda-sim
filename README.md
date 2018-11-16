@@ -34,4 +34,6 @@ of output in the code. This is a good example of functional programming's benefi
 When run on ACCRE the output of each job goes into the `status` directory as
 `status/job<run>.out`. Also the ACCRE SBATCH command controls the run numbers
 and is the most commonly edited line. For example, it's commonly set to execute
-2000 runs from 1-2000.
+2000 runs from 1-2000. The `missing.sh` script checks for jobs that didn't provide
+results. The output of this script can be used via copy and paste to modify the
+slurm job to rerun the problematic jobs.
