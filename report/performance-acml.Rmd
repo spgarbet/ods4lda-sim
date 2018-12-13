@@ -63,7 +63,9 @@ results$Sampling <- factor(results$Sampling,
 
 ## Purpose
 
-In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code is is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
+In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Dependent Sampling for Longitudinal Data Analysis) code it is desirable to understand the statistical performance of the proposed estimators. As such, this document examines the bias, precision, coverage and accuracy of the library for a variety of cases.
+
+### Reproducibility
 
 The code being tested is available in the git commit hash: `r system("git log --pretty=format:'%H' -n 1", intern=TRUE)` at the following location `github.com/spgarbet/ods4lda-sim.git`.
 
@@ -138,11 +140,18 @@ cell_func <- function(table, row, column, fun=NULL, ...)
 est.bias      <- function(column, selector)
 {
   data  <- column$data[selector]
-  test  <- t.test(data, na.rm=TRUE)
-  cls   <- if(test$p.value < 0.001) "failure" else NULL
-  ci    <- paste0(render_f(test$estimate, 3), 
-                  " (", render_f(test$conf.int[1], 3), ", ",
-                  render_f(test$conf.int[2], 3), ")")
+  do.test <- length(data) > 2
+  cls <- NULL
+  ci <- if(do.test)
+  {
+    test  <- t.test(data, na.rm=TRUE)
+    cls   <- if(test$p.value < 0.001) "failure"
+    paste0(render_f(test$estimate, 3), 
+           " (", render_f(test$conf.int[1], 3), ", ",
+           render_f(test$conf.int[2], 3), ")")
+  }
+  else ""
+  
   cell(ci, class=cls)
 }
 
@@ -156,7 +165,7 @@ bias_table <- function(m)
 
 all_bias_table <- function()
 {
-   all <- paste0(sapply(c("ACML", "MI", "TwoPhase"), function(m) bias_table(m)), collapse='<br/>')
+   all <- paste0(sapply(c("ACML", "WL", "MI", "TwoPhase"), function(m) bias_table(m)), collapse='<br/>')
    class(all) <- c("html", "character")
    all
 }
@@ -195,7 +204,7 @@ var.bias_table <- function(m)
 
 all_var.bias_table <- function()
 {
-   all <- paste0(sapply(c("ACML", "MI", "TwoPhase"), function(m) var.bias_table(m)), collapse='<br/>')
+   all <- paste0(sapply(c("ACML", "WL", "MI", "TwoPhase"), function(m) var.bias_table(m)), collapse='<br/>')
    class(all) <- c("html", "character")
    all
 }
@@ -358,8 +367,7 @@ eff <- function(m)
 ```
 
 ```{r eff_acml, results='asis', echo=FALSE}
-html5(eff(c("ACML", "MI", "TwoPhase")))
-#html5(eff(c("ACML", "WL", "MI")))
+html5(eff(c("ACML", "WL", "MI", "TwoPhase")))
 ```
 
 
