@@ -29,12 +29,25 @@ gen.std.mixnorm <- function(n.obs, mn0, mn1, sd0, sd1, p1, group)
 	(val-mean(val.tmp))/(sqrt(var(val.tmp)))
 }
 
+
+#################################
+
 GenerateX <- function(N, n, prev.grp, c.parm)
 {
     id   <- rep(1:N, each=n)
     time <- rep(c(0:(n-1)), N)
-    grp.tmp <- rbinom(N,1, prev.grp)
-    conf.tmp <- rnorm(N, c.parm[1]+grp.tmp*c.parm[2], 1) 
+    
+    # This is for properly specified data
+    # grp.tmp  <- rbinom(N,1, prev.grp)
+    # conf.tmp <- rnorm(N, c.parm[1]+grp.tmp*c.parm[2], 1) 
+    
+    # This is for model misspecification
+    conf.tmp <- rnorm(N, 0, 1)
+    alpha    <- c.param[1]
+    beta     <- c.param[2]
+    p.e      <- rbinom(N, 1, inv.logit(alpha+beta*(conf.tmp^2)))
+      
+    # Start data frame
     grp  <- rep(grp.tmp, each=n)
     conf <- rep(conf.tmp, each=n)
     
