@@ -43,9 +43,9 @@ GenerateX <- function(N, n, prev.grp, c.parm)
     
     # This is for model misspecification
     conf.tmp <- rnorm(N, 0, 1)
-    alpha    <- c.param[1]
-    beta     <- c.param[2]
-    p.e      <- rbinom(N, 1, inv.logit(alpha+beta*(conf.tmp^2)))
+    alpha    <- c.parm[1]
+    beta     <- c.parm[2]
+    grp.tmp  <- rbinom(N, 1, inv.logit(alpha+beta*(conf.tmp^2)))
       
     # Start data frame
     grp  <- rep(grp.tmp, each=n)
