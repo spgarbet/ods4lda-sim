@@ -26,6 +26,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(tangram)
 library(Hmisc)
 library(purrr)
+library(boot)
 ```
 
 ```{r functions, include=FALSE}
@@ -47,8 +48,6 @@ load.results <- function(target="../output", verbose=FALSE)
 }
 results <- load.results(verbose=TRUE)
 
-n <- length(unique(results$Scenario))
-
 results <- cleanup.import(
   results,
   labels= c("Job", "Scenario", "Sampling", "Method", 
@@ -58,6 +57,8 @@ results <- cleanup.import(
 
 results$Sampling <- factor(results$Sampling,
                            levels=c("Random", "Slope", "Mix1", "Mix2", "Intercept"))
+
+results <- subset(results, results$Scenario <= n) # Minor problem with extra runs.
 
 ```
 
@@ -70,9 +71,6 @@ In preparing for a CRAN packaging and improvements of the ODS4LDA (Outcome Depen
 The code being tested is available in the git commit hash: `r system("git log --pretty=format:'%H' -n 1", intern=TRUE)` at the following location `github.com/spgarbet/ods4lda-sim.git`.
 
 ### Method
-```{r, include=FALSE}
-n <- length(prev.grp)
-```
 
 `r N` individuals were simulated using `r n` mixed effect models,
 
@@ -96,7 +94,15 @@ for(i in 1:n)
 
 
 
-where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the confounder for the $i$th individual. Membership in the $g_i$ group occurs at a `r paste0(prev.grp, collapse=", ")` probability.
+where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the confounder for the $i$th individual.
+
+Membership in the $c_i$ group occurs at an average `r paste0(prev.grp, collapse=", ")` probability.
+In addition $c_i \sim \mathcal{N}(0,1)$ and membership probabilities were computed with $\text{logit}^{-1}(\alpha + \beta c_i^2)$ with $\alpha$ adjusted to make the average. 
+
+```{r, results='asis'}
+cat("$$\\alpha = {", paste(round(conf.param.sim[,1],2), collapse=", ")  ,"}$$\n\n")
+cat("$$\\beta = {", paste(round(conf.param.sim[,2],2), collapse=", ")  ,"}$$\n\n")
+```
 
 This was used to create between 4 to 6 observations at equally spaced time points for each individual.
 

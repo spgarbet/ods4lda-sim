@@ -45,3 +45,4 @@ NsPerStratumUniv.sim <- matrix( c(150,100,150,
 # Control TwoPhase RanTao
 hn_scale             <- rep(2, 3)
 
+n <- length(prev.grp)
