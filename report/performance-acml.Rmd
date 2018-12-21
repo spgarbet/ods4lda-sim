@@ -1,7 +1,7 @@
 ---
 title: "Performace of ACML"
 author: "Shawn Garbett"
-date: "May 22, 2018"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
 
@@ -84,7 +84,7 @@ for(i in 1:n)
 {
   cat("### Model Run",i,"\n\n")
   parm <- inits.sim[i,]
-  cat("$$y_{ij} = ",parm[1], parm[3]," s_i ", parm[5]," s_i t_{ij}", parm[2]," t_{ij} ", parm[4]," c_i + b_{0i} + b_{1i} t_{ij} + \\epsilon_{ij}$$\n", sep='')
+  cat("$$y_{ij} = ",parm[1], parm[3]," g_i ", parm[5]," g_i t_{ij}", parm[2]," t_{ij} ", parm[4]," c_i + b_{0i} + b_{1i} t_{ij} + \\epsilon_{ij}$$\n", sep='')
   cat("$$\\begin{bmatrix} b_{0i} \\\\ b_{1i} \\\\ \\end{bmatrix} \\sim \\mathcal{N}\\left(\\begin{bmatrix} 0\\\\0\\\\ \\end{bmatrix},\\begin{bmatrix} ", exp(parm[6])^2,"& 0 \\\\ 0 & ", round(exp(parm[7])^2,4), " \\\\ \\end{bmatrix} \\right)$$\n")
   cat("$$ \\epsilon_{ij} \\sim \\mathcal{N}(0, ", round(exp(parm[9])^2,4), ")$$")
   cat("\n\n")
@@ -96,7 +96,7 @@ for(i in 1:n)
 
 where $t_{ij}$ represents the $j$th timepoint for the $i$th individual, $g_i$ is the presence or absence of a SNIP or expensive binomial information for the $i$th individual, $c_i$ is the confounder for the $i$th individual.
 
-Membership in the $c_i$ group occurs at an average `r paste0(prev.grp, collapse=", ")` probability.
+Membership in the $g_i$ group occurs at an average `r paste0(prev.grp, collapse=", ")` probability.
 In addition $c_i \sim \mathcal{N}(0,1)$ and membership probabilities were computed with $\text{logit}^{-1}(\alpha + \beta c_i^2)$ with $\alpha$ adjusted to make the average. 
 
 ```{r, results='asis'}
