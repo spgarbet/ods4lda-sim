@@ -43,6 +43,7 @@ load.results <- function(target="../output", verbose=FALSE)
     if(verbose) cat("Loading ", f, "\n")
     load(f)
     
+    cat(f, results$Scenario)
     results
   }))
 }
@@ -57,8 +58,6 @@ results <- cleanup.import(
 
 results$Sampling <- factor(results$Sampling,
                            levels=c("Random", "Slope", "Mix1", "Mix2", "Intercept"))
-
-results <- subset(results, results$Scenario <= n) # Minor problem with extra runs.
 
 ```
 
